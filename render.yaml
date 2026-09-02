@@ -3,7 +3,7 @@ services:
     name: fundamenta-api
     runtime: docker
     region: oregon
-    plan: 0.5c-512mb
+    plan: free
     dockerContext: .
     dockerfilePath: ./backend/Dockerfile
     dockerCommand: /app/.venv/bin/python -m app.runtime api
@@ -17,41 +17,18 @@ services:
       - key: BOOTSTRAP_ON_START
         value: "true"
       - key: UPLOAD_DIR
-        value: /var/data/avatars
-    disk:
-      name: fundamenta-avatars
-      mountPath: /var/data
-      sizeGB: 1
-
-  - type: worker
-    name: fundamenta-notes-worker
-    runtime: docker
-    region: oregon
-    plan: 0.5c-512mb
-    dockerContext: .
-    dockerfilePath: ./backend/Dockerfile
-    dockerCommand: /app/.venv/bin/python -m app.runtime notes-worker
-    autoDeployTrigger: commit
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: fundamenta-postgres
-          property: connectionString
-      - key: BOOTSTRAP_ON_START
+        value: /tmp/fundamenta-avatars
+      - key: NOTES_SYNC_IN_API_ON_START
         value: "true"
       - key: NOTES_SYNC_ON_START
         value: "true"
-      - key: NOTES_SYNC_DAY
-        value: "1"
-      - key: NOTES_SYNC_HOUR
-        value: "6"
       - key: NOTES_SYNC_TIMEZONE
         value: America/Lima
 
 databases:
   - name: fundamenta-postgres
     region: oregon
-    plan: 0.1c-256mb
+    plan: free
     postgresMajorVersion: "17"
     databaseName: fundamenta
     user: fundamenta

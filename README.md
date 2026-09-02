@@ -23,6 +23,9 @@ La extracción, versionado y sincronización automática de notas auditadas est�
 [`docs/FASE_7_NOTAS_FINANCIERAS.md`](docs/FASE_7_NOTAS_FINANCIERAS.md).
 El arranque automático sobre una base vacía y el Blueprint de Render se explican en
 [`docs/DESPLIEGUE_RENDER_DATOS_INICIALES.md`](docs/DESPLIEGUE_RENDER_DATOS_INICIALES.md).
+El Blueprint actual usa únicamente una API y un PostgreSQL gratuitos. En ese nivel,
+la base expira a los 30 días, los avatares subidos no son persistentes y la revisión
+mensual de notas se ejecuta al primer despertar de la API durante el nuevo mes.
 
 ## Arquitectura
 

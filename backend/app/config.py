@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     notes_http_timeout_seconds: float = 120
     notes_max_pdf_bytes: int = 30_000_000
     notes_worker_max_attempts: int = 3
+    notes_sync_in_api_on_start: bool = False
     migrations_dir: str = "infra/postgres/init"
     bootstrap_events_file: str = "backend/data/events/official_events_2026.json"
     bootstrap_on_start: bool = True

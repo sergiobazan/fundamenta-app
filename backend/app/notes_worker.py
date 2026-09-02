@@ -68,6 +68,17 @@ def enqueue_if_due(now: datetime) -> int:
     return queued
 
 
+def sync_available_jobs() -> list[dict[str, object]]:
+    settings = get_settings()
+    initialize()
+    results: list[dict[str, object]] = []
+    while True:
+        result = process_next_job(settings)
+        if result is None:
+            return results
+        results.append(result)
+
+
 def run(*, once: bool = False) -> None:
     settings = get_settings()
     initialize()

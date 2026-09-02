@@ -5,8 +5,7 @@ No es necesario abrir una consola ni ejecutar comandos SQL después del desplieg
 
 ## Qué ocurre al arrancar
 
-Tanto la API como el worker ejecutan `app.runtime` antes de iniciar su proceso normal.
-Ese módulo:
+La API ejecuta `app.runtime` antes de iniciar su proceso normal. Ese módulo:
 
 1. toma un bloqueo de PostgreSQL para que sólo una instancia inicialice la base;
 2. descubre y aplica en orden las seis migraciones de `infra/postgres/init`;
@@ -19,23 +18,30 @@ Ese módulo:
 8. descarga, extrae y versiona las notas financieras de los dos PDF oficiales;
 9. valida cantidades mínimas, métricas disponibles y controles contables.
 
-Si dos servicios arrancan a la vez, el segundo espera el bloqueo y después detecta
-que la inicialización ya terminó. Si Render reinicia o redespliega un servicio, no se
-duplican filings, métricas, eventos ni documentos de notas.
+Si Render reinicia, despierta o redespliega el servicio, no se duplican filings,
+métricas, eventos ni documentos de notas. En cada nuevo mes el arranque de la API
+encola y procesa una revisión de los PDF; por eso la actualización ocurre al primer
+despertar mensual del servicio gratuito.
 
 ## Recursos incluidos en el Blueprint
 
 El archivo `render.yaml` declara:
 
 - `fundamenta-postgres`: PostgreSQL 17 sin acceso público;
-- `fundamenta-api`: API FastAPI con health check en `/health`;
-- `fundamenta-notes-worker`: sincronización al arrancar y mensual;
-- un disco persistente para los avatares subidos a la API.
+- `fundamenta-api`: API FastAPI gratuita con health check en `/health`.
 
-Los planes configurados son de pago porque el worker permanente y el disco de
-avatares no están cubiertos adecuadamente por un despliegue gratuito. Se pueden
-cambiar en el Dashboard antes de confirmar la creación, entendiendo que quitar el
-disco hará que los avatares se pierdan en cada despliegue.
+Los dos recursos usan el plan `free`, por lo que el Blueprint no requiere un worker
+ni un disco de pago. Esta variante es apropiada para validar el MVP, no para una
+operación permanente, y tiene estas restricciones:
+
+- PostgreSQL gratuito expira 30 días después de crearse, tiene 1 GB y no incluye
+  backups;
+- la API duerme después de 15 minutos sin tráfico y puede tardar cerca de un minuto
+  en responder al siguiente acceso;
+- el filesystem es efímero: un avatar personalizado desaparece al dormir o
+  redesplegar; el avatar predeterminado sigue funcionando;
+- la revisión mensual de notas es oportunista: se ejecuta cuando la API vuelve a
+  arrancar durante el nuevo mes, no en una hora exacta.
 
 ## Crear los recursos
 
@@ -61,8 +67,8 @@ NEXT_PUBLIC_LANDING_URL=https://<dominio-landing>
 ```
 
 `API_URL` se usa en el servidor de Next.js. `NEXT_PUBLIC_API_URL` se usa para las
-URLs públicas de avatares. No agregues `DATABASE_URL` a Vercel: sólo la API y el
-worker deben conectarse a PostgreSQL.
+URLs públicas de avatares. No agregues `DATABASE_URL` a Vercel: sólo la API debe
+conectarse a PostgreSQL.
 
 ## Operación y recuperación
 

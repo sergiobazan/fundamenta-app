@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,7 @@ from app.migrations import run_migrations
 from app.notes import NoteSourceConfig, load_note_sources
 from app.notes_jobs import (
     enqueue_monthly_jobs,
+    monthly_slot,
     process_next_job,
     register_note_sources,
 )
@@ -27,7 +29,6 @@ from app.smv.client import SmvClient
 
 logger = logging.getLogger("fundamenta.bootstrap")
 BOOTSTRAP_LOCK_NAME = "fundamenta_initial_data_bootstrap"
-BOOTSTRAP_NOTE_SLOT = "bootstrap-v1"
 COMPANY_RPJS = ("B20003", "A20032")
 STATEMENT_TYPES = ("balance_sheet", "income_statement", "cash_flow")
 
@@ -178,11 +179,12 @@ def import_initial_events(payloads: list[dict[str, Any]]) -> dict[str, Any]:
 def sync_initial_notes(
     settings: Settings, note_sources: tuple[NoteSourceConfig, ...]
 ) -> list[dict[str, Any]]:
+    slot = monthly_slot(datetime.now(UTC), settings.notes_sync_timezone)
     with connect() as connection:
         register_note_sources(connection, note_sources)
         enqueue_monthly_jobs(
             connection,
-            slot=BOOTSTRAP_NOTE_SLOT,
+            slot=slot,
             trigger_type="startup",
             max_attempts=settings.notes_worker_max_attempts,
         )
@@ -195,7 +197,7 @@ def sync_initial_notes(
                     error_message = NULL, updated_at = NOW()
                 WHERE dedupe_key LIKE %s AND status IN ('failed', 'retrying')
                 """,
-                (f"notes:%:{BOOTSTRAP_NOTE_SLOT}",),
+                (f"notes:%:{slot}",),
             )
         connection.commit()
 
