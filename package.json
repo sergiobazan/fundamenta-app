@@ -1,0 +1,14 @@
+{
+  "name": "fundamenta",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "dev:landing": "npm run dev --workspace @fundamenta/landing",
+    "dev:web": "npm run dev --workspace @fundamenta/web",
+    "build": "npm run build --workspaces --if-present",
+    "check": "npm run check --workspaces --if-present"
+  }
+}

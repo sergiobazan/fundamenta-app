@@ -1,0 +1,33 @@
+---
+import { site } from "../config";
+---
+{site.gaId && <script is:inline define:vars={{ gaId: site.gaId }}>
+  const enableAnalytics = () => {
+    if (window.__fundamentaAnalyticsLoaded) return;
+    window.__fundamentaAnalyticsLoaded = true;
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+    document.head.appendChild(script);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function(){ window.dataLayer.push(arguments); };
+    window.gtag('js', new Date());
+    window.gtag('config', gaId, { anonymize_ip: true });
+  };
+  if (localStorage.getItem('fundamenta-cookie-consent') === 'accepted') enableAnalytics();
+  window.addEventListener('fundamenta:analytics-consent', enableAnalytics);
+</script>}
+{site.gaId && <div class="cookie-banner" data-cookie-banner hidden>
+  <p>Usamos analítica opcional para mejorar el producto. No se activa sin tu permiso.</p>
+  <div><button data-reject>Rechazar</button><button class="accept" data-accept>Aceptar</button></div>
+</div>}
+{site.gaId && <script is:inline>
+  const banner = document.querySelector('[data-cookie-banner]');
+  if (banner && !localStorage.getItem('fundamenta-cookie-consent')) banner.hidden = false;
+  banner?.querySelector('[data-accept]')?.addEventListener('click', () => { localStorage.setItem('fundamenta-cookie-consent', 'accepted'); banner.hidden = true; window.dispatchEvent(new Event('fundamenta:analytics-consent')); });
+  banner?.querySelector('[data-reject]')?.addEventListener('click', () => { localStorage.setItem('fundamenta-cookie-consent', 'rejected'); banner.hidden = true; });
+</script>}
+<style>
+  .cookie-banner { position: fixed; z-index: 50; left: 1rem; bottom: 1rem; width: min(28rem, calc(100% - 2rem)); padding: 1rem; background: white; border: 1px solid var(--line); border-radius: 1rem; box-shadow: 0 20px 70px #1d292330; }
+  .cookie-banner[hidden] { display: none; } p { margin: 0 0 .8rem; font-size: .82rem; } .cookie-banner div { display: flex; gap: .5rem; justify-content: flex-end; } button { border: 1px solid var(--line); border-radius: .6rem; padding: .55rem .8rem; background: white; } .accept { background: var(--ink); color: white; }
+</style>

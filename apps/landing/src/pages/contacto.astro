@@ -1,0 +1,13 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import { site } from "../config";
+---
+<BaseLayout title="Contacto y piloto | Fundamenta" description="Solicita participar en el piloto de Fundamenta. Respondemos las solicitudes recibidas por el canal configurado en un día hábil.">
+  <Breadcrumbs items={[{label:'Inicio',href:'/'},{label:'Contacto'}]} />
+  <section class="page-hero shell"><span class="eyebrow">Piloto privado</span><h1>Ayúdanos a probar<br/>lo importante.</h1><p class="lead">Buscamos inversionistas, estudiantes y analistas que hoy revisen reportes financieros peruanos de forma manual.</p></section>
+  <section class="section white"><div class="shell contact-grid"><div><h2>Promesa de respuesta</h2><p class="lead">Respondemos en un máximo de <strong>1 día hábil</strong> a las solicitudes recibidas mediante el canal de contacto configurado.</p><ul><li>Sesión de prueba de 30 minutos</li><li>Acceso al caso real disponible</li><li>Sin compromiso de pago</li></ul></div><div class="contact-card">{site.contactEmail ? <><span class="tag">Canal disponible</span><h2>Escríbenos</h2><p>Cuéntanos cuántas empresas analizas y cómo trabajas hoy.</p><a class="button coral" href={`mailto:${site.contactEmail}?subject=Quiero participar en el piloto de Fundamenta`}>Enviar correo →</a><p class="email">{site.contactEmail}</p></> : <><span class="tag pending">Configuración pendiente</span><h2>El canal público aún no está activo.</h2><p>No publicamos una dirección de correo ficticia. Define <code>PUBLIC_CONTACT_EMAIL</code> para habilitarlo antes del lanzamiento.</p><a class="button" href={`${site.appUrl}/registro`}>Usar el acceso local →</a></>}</div></div></section>
+</BaseLayout>
+<style>
+  .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:6rem}.contact-grid h2{font-size:2.4rem}.contact-grid li{padding:.7rem 0}.contact-card{background:var(--ink);color:white;border-radius:1.3rem;padding:2.2rem}.contact-card p{color:#c4cdc7}.contact-card .email{font-size:.8rem}.pending{background:#f2d8c9;color:#5d291e}.contact-card code{color:white}@media(max-width:700px){.contact-grid{grid-template-columns:1fr;gap:2rem}}
+</style>

@@ -1,0 +1,7 @@
+/* Selected motion patterns adapted from Animista (animista.net), FreeBSD License. */
+@keyframes fade-in-up { 0% { transform: translateY(24px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes float-soft { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-10px) rotate(1deg); } }
+.anim-fade-up { animation: fade-in-up .72s cubic-bezier(.22,1,.36,1) both; }
+.anim-fade-up-delay { animation: fade-in-up .72s .14s cubic-bezier(.22,1,.36,1) both; }
+.anim-float { animation: float-soft 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .anim-fade-up,.anim-fade-up-delay,.anim-float { animation: none !important; } html { scroll-behavior: auto !important; } }

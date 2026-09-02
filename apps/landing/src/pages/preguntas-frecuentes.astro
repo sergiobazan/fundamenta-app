@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+const faqs=[
+  ['¿Fundamenta recomienda comprar o vender acciones?','No. Organiza información financiera y muestra indicadores con sus fuentes para apoyar tu propia investigación. No ofrece asesoría personalizada, señales ni promesas de rentabilidad.'],
+  ['¿De dónde provienen los datos?','El MVP prioriza información oficial estructurada de la Superintendencia del Mercado de Valores (SMV) y documentos publicados por los emisores. Cada cifra importante conserva su referencia.'],
+  ['¿La inteligencia artificial calcula los indicadores?','No. Las fórmulas financieras se ejecutan en código versionado y reproducible. Una IA futura podrá ayudar a explicar documentos, pero nunca sustituirá los cálculos ni una fuente verificable.'],
+  ['¿Qué empresas están disponibles?','Buenaventura y Minsur cuentan con estados consolidados 2025, métricas trazables y comparación homogénea. El alcance cerrado del MVP contempla ocho mineras peruanas, que se incorporarán sólo cuando sus datos pasen las validaciones.'],
+  ['¿Qué ocurre si falta un dato?','El indicador se marca como no disponible y explica qué componente falta. Fundamenta no estima cifras silenciosamente ni mezcla periodos incompatibles.'],
+];
+const schema={"@context":"https://schema.org","@type":"FAQPage",mainEntity:faqs.map(([q,a])=>({"@type":"Question",name:q,acceptedAnswer:{"@type":"Answer",text:a}}))};
+---
+<BaseLayout title="Preguntas frecuentes | Fundamenta" description="Respuestas sobre las fuentes, indicadores, cobertura y límites de la plataforma de análisis financiero Fundamenta." schema={schema}>
+  <Breadcrumbs items={[{label:'Inicio',href:'/'},{label:'Preguntas frecuentes'}]} />
+  <section class="page-hero shell"><span class="eyebrow">FAQ</span><h1>Preguntas honestas.<br/>Respuestas directas.</h1><p class="lead">Cinco cosas que conviene saber antes de usar la plataforma.</p></section>
+  <section class="section white"><div class="narrow faq-list">{faqs.map(([question,answer],index)=><details open={index===0}><summary><span>0{index+1}</span>{question}<i>+</i></summary><p>{answer}</p></details>)}</div></section>
+</BaseLayout>
+<style>
+  .faq-list details{border-top:1px solid var(--line);padding:0}.faq-list details:last-child{border-bottom:1px solid var(--line)}summary{display:grid;grid-template-columns:2.5rem 1fr 1.5rem;gap:1rem;align-items:center;padding:1.6rem 0;cursor:pointer;font:650 1.15rem var(--font-display);list-style:none}summary span{color:var(--coral);font:700 .72rem var(--font-body)}summary i{font-style:normal;font-size:1.5rem;transition:transform .2s}details[open] summary i{transform:rotate(45deg)}details p{margin:0 3.5rem 1.8rem;color:var(--muted)}
+</style>

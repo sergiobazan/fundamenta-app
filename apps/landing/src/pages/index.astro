@@ -1,0 +1,90 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ShapeDivider from "../components/ShapeDivider.astro";
+import { reviews, site } from "../config";
+
+const sourceUrl = "https://buenaventura.com/wp-content/uploads/2026/04/Integrated-annual-report-2025_Buenaventura_ENG.pdf";
+const schema = { "@context":"https://schema.org", "@graph":[
+  { "@type":"Organization", name:site.name, url:site.siteUrl, logo:new URL('/favicon.svg',site.siteUrl).toString() },
+  { "@type":"SoftwareApplication", name:site.name, applicationCategory:"FinanceApplication", operatingSystem:"Web", description:"Plataforma de investigación financiera verificable para empresas peruanas." }
+]};
+---
+<BaseLayout title="Fundamenta | Análisis financiero verificable de empresas peruanas" description="Convierte reportes oficiales de empresas peruanas en métricas comparables, fórmulas visibles y evidencia enlazada a su fuente." schema={schema}>
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div class="hero-copy anim-fade-up">
+        <span class="eyebrow">Investigación financiera · Perú</span>
+        <h1>Menos PDF.<br/><em>Más evidencia.</em></h1>
+        <p class="lead">Fundamenta ordena los estados financieros oficiales, calcula los indicadores y conserva la ruta hasta cada fuente. Tú haces el juicio.</p>
+        <div class="hero-actions"><a class="button coral" href={`${site.appUrl}/registro`}>Explorar caso real <span>→</span></a><a class="button ghost" href="/como-funciona">Ver cómo funciona</a></div>
+        <p class="microcopy">Sin tarjeta · Datos oficiales · No damos señales de compra o venta</p>
+      </div>
+      <div class="dashboard-preview anim-fade-up-delay" aria-label="Vista previa del panel financiero de Buenaventura">
+        <div class="preview-top"><span class="mini-logo">F</span><div><b>Buenaventura</b><small>Consolidado · 2025</small></div><span class="verified">● Verificado</span></div>
+        <div class="metric-feature"><span>Margen neto</span><strong>47.9%</strong><small>Utilidad neta ÷ Ingresos</small><div class="chart" aria-hidden="true"><i style="height:28%"></i><i style="height:35%"></i><i style="height:46%"></i><i style="height:68%"></i><i style="height:92%"></i></div></div>
+        <div class="mini-grid"><div><span>Razón corriente</span><b>2.01×</b></div><div><span>Flujo de caja libre</span><b>US$ 104.3 M</b></div></div>
+        <p class="source"><a href={sourceUrl} target="_blank" rel="noreferrer">Reporte integrado 2025, Buenaventura</a></p>
+        <span class="data-stamp anim-float">172 datos extraídos<br/><b>6 controles aprobados</b></span>
+      </div>
+    </div>
+    <div class="shell trust-row"><span>Fuente oficial conectada</span><b>SMV</b><i></i><span>Caso piloto</span><b>Buenaventura</b><i></i><span>Trazabilidad</span><b>100% de métricas</b></div>
+  </section>
+
+  <section class="section white" id="producto">
+    <div class="shell">
+      <div class="section-head"><div><span class="eyebrow">Un flujo, no otra carpeta</span><h2>Del reporte oficial a una lectura útil.</h2></div><p>Los números se calculan con código reproducible. La fuente, el periodo, la moneda y la escala viajan con el dato.</p></div>
+      <div class="steps">
+        <article><span>01</span><div class="step-icon">↓</div><h3>Recopila</h3><p>Descarga información estructurada y reportes desde fuentes oficiales.</p><small>SMV · Emisor</small></article>
+        <article><span>02</span><div class="step-icon">≋</div><h3>Normaliza</h3><p>Homologa conceptos sin ocultar la etiqueta contable original.</p><small>Moneda · Escala · Periodo</small></article>
+        <article><span>03</span><div class="step-icon">ƒ</div><h3>Calcula</h3><p>Aplica fórmulas visibles y bloquea resultados si falta un componente.</p><small>15 indicadores actuales</small></article>
+        <article><span>04</span><div class="step-icon">↗</div><h3>Referencia</h3><p>Conecta cada cifra importante con el documento que la respalda.</p><small>Fecha · Documento · Fuente</small></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="evidence-section">
+    <div class="shell evidence-grid">
+      <div><span class="eyebrow">Caso procesado, no promesa</span><h2>Buenaventura 2025,<br/>en contexto.</h2><p class="lead">El piloto ya ingirió tres estados consolidados, normalizó 41 conceptos y calculó 15 indicadores con siete validaciones contables aprobadas.</p><a class="text-link" href="/casos/buenaventura-2025">Abrir estudio de caso <span>→</span></a></div>
+      <div class="evidence-card">
+        <div class="period-tabs"><b>Resultados</b><span>Liquidez</span><span>Flujo</span></div>
+        <div class="big-number"><span>Crecimiento de ingresos</span><strong>+50.0%</strong><small>2025 vs. importe comparativo</small></div>
+        <div class="bar-row"><span>Ingresos comparativos</span><i><b style="width:66.7%"></b></i></div><div class="bar-row"><span>Ingresos 2025</span><i><b style="width:100%"></b></i></div>
+        <p class="source"><a href={sourceUrl} target="_blank" rel="noreferrer">Fuente: Reporte integrado 2025 de Buenaventura</a></p>
+      </div>
+    </div>
+  </section>
+  <ShapeDivider />
+
+  <section class="section" id="principios">
+    <div class="shell principles">
+      <div><span class="eyebrow">Diseñado para desconfiar bien</span><h2>Una cifra sin contexto es sólo decoración.</h2></div>
+      <div class="principle-list">
+        <article><b>01</b><div><h3>La fuente antes que la conclusión</h3><p>Las métricas importantes enlazan su evidencia. Si no podemos sostener una cifra, no la publicamos.</p></div></article>
+        <article><b>02</b><div><h3>La fórmula permanece visible</h3><p>No usamos una IA para hacer aritmética. Cada indicador conserva fórmula, versión e insumos.</p></div></article>
+        <article><b>03</b><div><h3>Sin veredictos disfrazados</h3><p>Fundamenta organiza evidencia; no recomienda comprar, mantener o vender una acción.</p></div></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section white" id="resenas">
+    <div class="shell">
+      <div class="section-head"><div><span class="eyebrow">Reseñas verificadas</span><h2>La confianza no se fabrica.</h2></div><p>Sólo publicaremos testimonios reales, identificados y autorizados.</p></div>
+      {reviews.length > 0 ? <div class="reviews">{reviews.filter(r => r.permissionRecorded).map(r => <blockquote><p>“{r.quote}”</p><footer><b>{r.author}</b><span>{r.role}</span></footer></blockquote>)}</div> : <div class="review-empty"><span>Piloto en validación</span><h3>Aún no hay reseñas públicas verificadas.</h3><p>Esta sección se activará después de las primeras pruebas con usuarios y sólo con autorización expresa. Es una limitación real, no texto de relleno.</p><a href="/contacto">Participar en el piloto →</a></div>}
+    </div>
+  </section>
+
+  <section class="final-cta"><div class="shell"><span class="eyebrow">Empieza por la evidencia</span><h2>Abre el primer caso.<br/>Cuestiona cada cifra.</h2><p>El acceso de prueba incluye Buenaventura 2025 y sus 15 indicadores calculados.</p><a class="button coral" href={`${site.appUrl}/registro`}>Crear una cuenta <span>→</span></a></div></section>
+</BaseLayout>
+
+<style>
+  .hero { padding:5.5rem 0 2.2rem; background:radial-gradient(circle at 72% 30%,#d9f0df 0,transparent 33%),var(--paper); overflow:hidden; }
+  .hero-grid { display:grid; grid-template-columns:1.05fr .95fr; align-items:center; gap:5rem; }.hero h1 { margin:1rem 0 1.4rem; }.hero h1 em { color:var(--green); font-style:normal; }.hero-actions { display:flex; gap:.7rem; margin:2rem 0 1rem; }.hero-actions span { margin-left:1.5rem; }.microcopy { color:var(--muted); font-size:.75rem; }
+  .dashboard-preview { position:relative; background:#fffef9; border:1px solid #d9ddd5; border-radius:1.5rem; padding:1.3rem; box-shadow:0 35px 100px #32544120; transform:rotate(1.2deg); }.preview-top { display:flex; align-items:center; gap:.7rem; border-bottom:1px solid var(--line); padding-bottom:1rem; }.preview-top div { display:grid; line-height:1.25; }.preview-top small { color:var(--muted); }.mini-logo { display:grid; place-items:center; width:2.4rem;height:2.4rem;background:var(--ink);color:white;border-radius:.7rem;font-weight:800; }.verified { margin-left:auto;color:var(--green);font-size:.7rem;font-weight:700; }.metric-feature { position:relative; min-height:13rem;padding:1.5rem 0;display:flex;flex-direction:column; }.metric-feature>span,.mini-grid span { color:var(--muted);font-size:.77rem; }.metric-feature strong { font:800 3rem var(--font-display);letter-spacing:-.06em;margin-top:.3rem; }.metric-feature small { color:var(--green); }.chart { position:absolute;bottom:1.5rem;right:0;height:8rem;width:55%;display:flex;align-items:end;gap:.45rem;border-bottom:1px solid var(--line); }.chart i { flex:1;background:var(--green);border-radius:.3rem .3rem 0 0;opacity:.85; }.mini-grid { display:grid;grid-template-columns:1fr 1fr;gap:.7rem; }.mini-grid div { display:grid;gap:.3rem;background:#f2f4ee;padding:1rem;border-radius:.8rem; }.mini-grid b { font:750 1.2rem var(--font-display); }.dashboard-preview .source { margin:1rem 0 0; }.data-stamp { position:absolute;right:-2.5rem;top:-2.8rem;background:var(--coral);padding:.8rem 1rem;border-radius:.8rem;box-shadow:0 12px 30px #58231328;font-size:.7rem;transform:rotate(3deg); }.trust-row { margin-top:5.5rem;padding-top:1.5rem;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:1.2rem;color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.08em; }.trust-row b { color:var(--ink); }.trust-row i { width:1px;height:1.5rem;background:var(--line); }
+  .steps { display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem; }.steps article { position:relative;padding:1.3rem;border-top:1px solid var(--line); }.steps article>span { color:var(--muted);font-size:.68rem; }.step-icon { display:grid;place-items:center;width:3.2rem;height:3.2rem;margin:2.8rem 0 2rem;border-radius:50%;background:var(--mint);font:700 1.4rem var(--font-display); }.steps p { color:var(--muted);font-size:.9rem; }.steps small { color:var(--green);font-size:.72rem; }
+  .evidence-section { background:var(--ink);color:white;padding:7rem 0 4rem; }.evidence-grid { display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:6rem; }.evidence-grid .lead { color:#bbc4be; }.text-link { color:var(--mint);font-weight:700; }.text-link span { margin-left:1rem; }.evidence-card { background:#fefcf5;color:var(--ink);padding:1.4rem;border-radius:1.3rem; }.period-tabs { display:flex;gap:1.3rem;border-bottom:1px solid var(--line);padding-bottom:1rem;font-size:.8rem;color:var(--muted); }.period-tabs b { color:var(--ink); }.big-number { display:grid;padding:1.5rem 0; }.big-number span,.big-number small { color:var(--muted);font-size:.78rem; }.big-number strong { font:800 3.6rem var(--font-display);letter-spacing:-.06em;color:var(--green); }.bar-row { display:grid;grid-template-columns:9rem 1fr;align-items:center;gap:1rem;margin:.8rem 0;font-size:.72rem;color:var(--muted); }.bar-row i { height:.7rem;background:#e7e9e1;border-radius:1rem;overflow:hidden; }.bar-row b { display:block;height:100%;background:var(--green);border-radius:inherit; }
+  .principles { display:grid;grid-template-columns:.9fr 1.1fr;gap:8rem; }.principle-list article { display:grid;grid-template-columns:2rem 1fr;gap:1rem;padding:1.6rem 0;border-top:1px solid var(--line); }.principle-list article>b { color:var(--coral);font-size:.75rem; }.principle-list p { color:var(--muted);margin:0; }
+  .review-empty { max-width:650px;border-left:3px solid var(--coral);padding:1.2rem 1.5rem;background:var(--paper); }.review-empty>span { color:var(--green);text-transform:uppercase;font-size:.7rem;font-weight:700;letter-spacing:.1em; }.review-empty h3 { margin:.6rem 0; }.review-empty p { color:var(--muted); }.review-empty a { color:var(--green);font-weight:700; }
+  .final-cta { text-align:center;padding:7rem 0;background:var(--green);color:white; }.final-cta .eyebrow { color:#d5f2e0; }.final-cta h2 { margin:1rem auto; }.final-cta p { color:#d8e7df; }.final-cta .button { margin-top:1rem; }
+  @media(max-width:900px){.hero-grid,.evidence-grid,.principles{grid-template-columns:1fr;gap:3.5rem}.hero-copy{max-width:700px}.dashboard-preview{max-width:620px;margin:auto}.steps{grid-template-columns:1fr 1fr}.principles{gap:2rem}}
+  @media(max-width:620px){.hero{padding-top:3rem}.hero-actions{align-items:stretch;flex-direction:column}.data-stamp{right:.5rem;top:-3rem}.trust-row{margin-top:4rem;justify-content:flex-start;overflow:auto}.trust-row i{flex:0 0 auto}.steps{grid-template-columns:1fr}.step-icon{margin:1.5rem 0}.big-number strong{font-size:3rem}.dashboard-preview{padding:.9rem}.metric-feature{min-height:11rem}.evidence-section{padding-top:5rem}.bar-row{grid-template-columns:7rem 1fr}}
+</style>

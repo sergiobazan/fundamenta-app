@@ -1,0 +1,39 @@
+name: future-financial
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: future
+      POSTGRES_USER: future
+      POSTGRES_PASSWORD: future
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U future -d future"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  notes-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://future:future@db:5432/future
+      NOTES_SOURCES_FILE: /app/backend/data/notes/sources.json
+      NOTES_SYNC_ON_START: "true"
+      NOTES_SYNC_DAY: "1"
+      NOTES_SYNC_HOUR: "6"
+      NOTES_SYNC_TIMEZONE: America/Lima
+      BOOTSTRAP_ON_START: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -1,0 +1,67 @@
+[
+  {
+    "company_rpj": "B20003",
+    "source_provider": "smv",
+    "external_id": "EXP-2026038653",
+    "category": "other",
+    "title": "Buenaventura comunica su Investor Day 2026",
+    "summary": "Buenaventura publicó ante la SMV una invitación a su Investor Day 2026.",
+    "published_at": "2026-08-26T08:45:00-05:00",
+    "effective_date": "2026-08-26",
+    "source_url": "https://www.smv.gob.pe/SIMV/Frm_hechosdeImportanciaDia?data=38C2EC33FA106691BB5B5039DACFDF50795D8EC3AF",
+    "source_document_name": "Hechos de importancia del día 26/08/2026",
+    "source_metadata": {
+      "source_kind": "regulatory_notice",
+      "usage_basis": "Metadatos públicos y resumen propio; no se almacena una copia del documento."
+    }
+  },
+  {
+    "company_rpj": "B20003",
+    "source_provider": "issuer_buenaventura",
+    "external_id": "BVN-PRODUCTION-2Q26",
+    "category": "production",
+    "title": "Buenaventura publica resultados operativos del 2T26",
+    "summary": "Buenaventura publicó cifras de producción y volúmenes vendidos del segundo trimestre de 2026. El documento actualiza el guidance de Yumpag, San Gabriel, Orcopampa y Tambomayo.",
+    "published_at": "2026-07-16T09:00:00-05:00",
+    "effective_date": "2026-06-30",
+    "source_url": "https://buenaventura.com/wp-content/uploads/2026/04/Buenaventura-2Q26-Operating-Press-Release-1.pdf",
+    "source_document_name": "Buenaventura 2Q26 Operating Press Release",
+    "source_metadata": {
+      "source_kind": "issuer_release",
+      "language": "en",
+      "usage_basis": "Metadatos públicos y resumen propio; el contenido completo permanece en el sitio del emisor."
+    }
+  },
+  {
+    "company_rpj": "A20032",
+    "source_provider": "smv",
+    "external_id": "A20032-20260511-DIVIDEND",
+    "category": "dividends",
+    "title": "Minsur acuerda distribuir US$350 millones en dividendos",
+    "summary": "El directorio de Minsur acordó distribuir US$350 millones entre acciones comunes y de inversión. La fecha de registro comunicada fue el 2 de junio de 2026 y la de entrega, el 19 de junio de 2026.",
+    "published_at": "2026-05-11T13:49:06-05:00",
+    "effective_date": "2026-06-19",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/CartaA20032_4_20260511134906.pdf",
+    "source_document_name": "Comunicación de acuerdos de directorio y distribución de dividendos",
+    "source_metadata": {
+      "source_kind": "regulatory_notice",
+      "usage_basis": "Metadatos públicos y resumen propio; no se almacena una copia del documento."
+    }
+  },
+  {
+    "company_rpj": "A20032",
+    "source_provider": "smv",
+    "external_id": "A20032-2025-ACA01",
+    "category": "other",
+    "title": "Minsur presenta información anual auditada consolidada 2025",
+    "summary": "Minsur comunicó a la SMV la presentación de su informe de auditoría, estados financieros y notas consolidadas de 2025, junto con el archivo XBRL.",
+    "published_at": "2026-03-26T15:30:42-05:00",
+    "effective_date": "2025-12-31",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/CartaA20032_22_20260326153042.pdf",
+    "source_document_name": "Comunicación de presentación de estados financieros anuales auditados consolidados 2025",
+    "source_metadata": {
+      "source_kind": "regulatory_filing",
+      "usage_basis": "Metadatos públicos y resumen propio; no se almacena una copia del documento."
+    }
+  }
+]

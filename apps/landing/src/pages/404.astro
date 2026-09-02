@@ -1,0 +1,7 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+<BaseLayout title="Página no encontrada | Fundamenta" description="La página que buscas no existe o cambió de ubicación." noindex>
+  <section class="not-found shell"><div><span>404</span><h1>Este dato no cuadra.</h1><p class="lead">La página no existe, cambió de lugar o el enlace está incompleto.</p><div><a class="button coral" href="/">Volver al inicio</a><a class="button ghost" href="/casos/buenaventura-2025">Ver el caso real</a></div></div><div class="visual" aria-hidden="true"><i></i><i></i><i></i><i></i><b>?</b></div></section>
+</BaseLayout>
+<style>.not-found{min-height:72vh;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:5rem}.not-found>div>span{color:var(--coral);font:800 1rem var(--font-display)}.not-found h1{font-size:clamp(3rem,6vw,5rem);margin:.7rem 0}.not-found>div>div{display:flex;gap:.7rem;flex-wrap:wrap}.visual{position:relative;height:360px;display:flex!important;align-items:end;justify-content:center;gap:1rem;border-bottom:2px solid var(--ink);background:linear-gradient(var(--line) 1px,transparent 1px);background-size:100% 25%}.visual i{width:15%;background:var(--green);border-radius:.5rem .5rem 0 0}.visual i:nth-child(1){height:30%}.visual i:nth-child(2){height:65%}.visual i:nth-child(3){height:48%}.visual i:nth-child(4){height:82%;background:var(--coral)}.visual b{position:absolute;top:20%;font:800 4rem var(--font-display)}@media(max-width:700px){.not-found{grid-template-columns:1fr;padding:4rem 0}.visual{height:220px}}</style>

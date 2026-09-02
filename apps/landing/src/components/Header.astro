@@ -1,0 +1,27 @@
+---
+import Logo from "./Logo.astro";
+import { site } from "../config";
+---
+<header class="site-header">
+  <div class="shell nav-wrap">
+    <Logo />
+    <nav aria-label="Navegación principal">
+      <a href="/#producto">Producto</a>
+      <a href="/como-funciona">Cómo funciona</a>
+      <a href="/casos/buenaventura-2025">Caso real</a>
+      <a href="/preguntas-frecuentes">Preguntas</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="login" href={`${site.appUrl}/login`}>Ingresar</a>
+      <a class="button small" href={`${site.appUrl}/registro`}>Probar el panel</a>
+    </div>
+    <details class="mobile-menu">
+      <summary aria-label="Abrir menú"><span></span><span></span></summary>
+      <div>
+        <a href="/#producto">Producto</a><a href="/como-funciona">Cómo funciona</a>
+        <a href="/casos/buenaventura-2025">Caso real</a><a href="/preguntas-frecuentes">Preguntas</a>
+        <a href={`${site.appUrl}/login`}>Ingresar</a>
+      </div>
+    </details>
+  </div>
+</header>

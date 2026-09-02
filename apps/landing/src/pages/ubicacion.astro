@@ -1,0 +1,14 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import { site } from "../config";
+const localSchema=site.businessAddress?{"@context":"https://schema.org","@type":"ProfessionalService",name:site.name,address:{"@type":"PostalAddress",streetAddress:site.businessAddress,addressCountry:"PE"},url:new URL('/ubicacion',site.siteUrl).toString()}:undefined;
+---
+<BaseLayout title="Ubicación y atención | Fundamenta" description="Información de ubicación y modalidad de atención de Fundamenta en Perú." schema={localSchema}>
+  <Breadcrumbs items={[{label:'Inicio',href:'/'},{label:'Ubicación'}]} />
+  <section class="page-hero shell"><span class="eyebrow">Ubicación</span><h1>Atención remota<br/>durante el piloto.</h1><p class="lead">No publicamos una oficina que no existe. El mapa, las indicaciones y el schema local se habilitan únicamente con una dirección comercial verificable.</p></section>
+  <section class="section white"><div class="shell location-grid">{site.businessAddress&&site.mapEmbedUrl?<><div class="map"><iframe src={site.mapEmbedUrl} title="Mapa de la ubicación de Fundamenta" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div><div><span class="tag">Dirección verificada</span><h2>{site.businessAddress}</h2>{site.directionsUrl&&<a class="button" href={site.directionsUrl} target="_blank" rel="noreferrer">Cómo llegar ↗</a>}</div></>:<><div class="map-placeholder" role="img" aria-label="Mapa no publicado porque la dirección comercial aún no ha sido verificada"><span>PERÚ</span><i>Lima</i></div><div><span class="tag pending">Dato pendiente</span><h2>Sin dirección pública verificada.</h2><p class="lead">Configura <code>PUBLIC_BUSINESS_ADDRESS</code>, <code>PUBLIC_MAP_EMBED_URL</code> y <code>PUBLIC_DIRECTIONS_URL</code> cuando exista una ubicación real. Hasta entonces tampoco se emite schema LocalBusiness.</p></div></>}</div></section>
+</BaseLayout>
+<style>
+  .location-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:4rem;align-items:center}.map,.map-placeholder{min-height:420px;border-radius:1.3rem;overflow:hidden;background:#dce8dd}.map iframe{border:0;width:100%;height:420px}.map-placeholder{position:relative;display:grid;place-items:center;background:radial-gradient(circle at 45% 60%,var(--coral) 0 7px,transparent 8px),linear-gradient(135deg,#d7e9d8,#afcfbd);color:#ffffff80;font:800 5rem var(--font-display)}.map-placeholder i{position:absolute;left:45%;top:62%;font:700 .8rem var(--font-body);color:var(--ink);background:white;padding:.3rem .5rem;border-radius:.4rem}.pending{background:#f2d8c9;color:#5d291e}.location-grid h2{font-size:2.5rem;margin:1rem 0}.location-grid code{font-size:.8rem}@media(max-width:750px){.location-grid{grid-template-columns:1fr}.map-placeholder{min-height:280px;font-size:3.5rem}}
+</style>

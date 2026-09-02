@@ -1,0 +1,11 @@
+---
+import { site } from "../config";
+---
+<div class="sticky-cta"><span>Analiza el caso real</span><a href={`${site.appUrl}/registro`}>Probar gratis</a></div>
+<style>
+  .sticky-cta { display: none; }
+  @media (max-width: 720px) {
+    .sticky-cta { position: fixed; z-index: 30; display: flex; align-items: center; justify-content: space-between; left: .75rem; right: .75rem; bottom: .75rem; padding: .7rem .75rem .7rem 1rem; color: white; background: #17211d; border: 1px solid #ffffff24; border-radius: 1rem; box-shadow: 0 18px 50px #0005; font-size: .78rem; }
+    a { background: var(--coral); color: #1d1714; padding: .7rem .9rem; border-radius: .7rem; font-weight: 750; }
+  }
+</style>

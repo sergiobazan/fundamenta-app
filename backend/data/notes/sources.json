@@ -1,0 +1,34 @@
+[
+  {
+    "source_key": "buenaventura-2025-consolidated-audited",
+    "company_rpj": "B20003",
+    "fiscal_year": 2025,
+    "period_code": "A",
+    "scope": "consolidated",
+    "language_code": "es",
+    "document_name": "BVN Consolidado 2025 - Informe auditado, estados financieros y notas",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/BVN%20CONSOLIDADO%202025.pdf",
+    "identity_tokens": [
+      "Compañía de Minas Buenaventura",
+      "Estados financieros consolidados",
+      "2025",
+      "Notas a los estados financieros consolidados"
+    ]
+  },
+  {
+    "source_key": "minsur-2025-consolidated-audited",
+    "company_rpj": "A20032",
+    "fiscal_year": 2025,
+    "period_code": "A",
+    "scope": "consolidated",
+    "language_code": "es",
+    "document_name": "Minsur Consolidado 2025 - Informe auditado, estados financieros y notas",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/Informe%20Minsur%20Consolidado.pdf",
+    "identity_tokens": [
+      "Minsur S.A. y Subsidiarias",
+      "Estados financieros consolidados",
+      "2025",
+      "Notas a los estados financieros consolidados"
+    ]
+  }
+]

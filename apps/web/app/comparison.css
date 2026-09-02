@@ -1,0 +1,109 @@
+.comparison-header p {
+  max-width: 650px;
+  margin: .4rem 0 0;
+}
+
+.comparison-picker {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  align-items: end;
+  gap: .8rem;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: .9rem;
+}
+
+.comparison-picker label { display: grid; gap: .35rem; }
+.comparison-picker label span { color: var(--muted); font-size: .62rem; }
+.comparison-picker select {
+  width: 100%;
+  padding: .75rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: white;
+  color: var(--ink);
+  font: 650 .75rem var(--body);
+}
+.comparison-picker button {
+  padding: .78rem 1.1rem;
+  border: 0;
+  border-radius: .6rem;
+  background: var(--ink);
+  color: white;
+  font-size: .72rem;
+  font-weight: 750;
+}
+.comparison-picker button:hover { background: var(--green); }
+.comparison-swap { align-self: center; color: var(--green); font-size: 1.1rem; }
+
+.compatibility-banner {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: 1rem;
+  padding: .9rem 1rem;
+  border-left: 3px solid;
+}
+.compatibility-banner > span {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  font-weight: 800;
+}
+.compatibility-banner div { display: grid; }
+.compatibility-banner b { font-size: .76rem; }
+.compatibility-banner p { margin: .1rem 0 0; color: var(--muted); font-size: .66rem; }
+.compatibility-banner.compatible { border-color: var(--green); background: #e8f1e9; }
+.compatibility-banner.compatible > span { background: var(--green); color: white; }
+.compatibility-banner.incompatible { border-color: var(--coral); background: #fff1e8; }
+.compatibility-banner.incompatible > span { background: var(--coral); }
+
+.comparison-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: .9rem;
+  background: var(--surface);
+}
+.comparison-table { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: fixed; }
+.comparison-table th,
+.comparison-table td { width: 33.333%; padding: 1rem; text-align: left; border-right: 1px solid var(--line); }
+.comparison-table th:last-child,
+.comparison-table td:last-child { border-right: 0; }
+.comparison-table th { background: var(--ink); color: white; font: 700 .82rem var(--display); }
+.comparison-table th:first-child { color: #9eaaa2; }
+.comparison-table th a { text-decoration: underline; text-underline-offset: 3px; }
+.comparison-table th small { display: block; margin-top: .2rem; color: #95a198; font: 400 .56rem var(--body); }
+.comparison-table td { border-top: 1px solid var(--line); }
+.comparison-table td:first-child { display: grid; }
+.comparison-table td:first-child b { font-size: .72rem; }
+.comparison-table td:first-child small { margin-top: .2rem; color: var(--muted); font-size: .58rem; }
+.comparison-table td strong { display: block; font: 760 1.3rem var(--display); letter-spacing: -.04em; }
+.comparison-table td > span { color: var(--green); font-size: .57rem; }
+
+.comparison-sources {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #ece9df;
+}
+.comparison-sources p { max-width: 560px; margin: .25rem 0 0; color: var(--muted); font-size: .68rem; }
+.comparison-sources > div:last-child { display: grid; align-content: center; gap: .3rem; text-align: right; }
+.comparison-sources a { color: var(--green); font-size: .65rem; font-weight: 700; text-decoration: underline; }
+.comparison-empty { display: grid; place-items: start; align-content: center; min-height: 70vh; max-width: 620px; }
+.comparison-empty h1 { font: 760 2.8rem/1.05 var(--display); letter-spacing: -.05em; margin: .5rem 0; }
+.comparison-empty p { color: var(--muted); }
+.comparison-empty .document-button { margin: 1rem 0 0; }
+
+@media (max-width: 720px) {
+  .comparison-picker { grid-template-columns: 1fr; }
+  .comparison-swap { display: none; }
+  .comparison-picker button { width: 100%; }
+  .comparison-sources { display: block; }
+  .comparison-sources > div:last-child { margin-top: 1rem; text-align: left; }
+}

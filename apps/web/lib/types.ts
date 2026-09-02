@@ -1,0 +1,199 @@
+export type User = {
+  id: number;
+  email: string;
+  full_name: string;
+  bio: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Metric = {
+  metric_code: string;
+  display_name: string;
+  description: string;
+  value_kind: "monetary" | "ratio" | "percentage";
+  formula_expression: string;
+  formula_version: number;
+  status: "computed" | "not_available";
+  value: string | number | null;
+  currency_code: string | null;
+  value_scale: "units" | "thousands" | "millions" | null;
+  reason: string | null;
+  inputs: Record<string, {
+    current: string | number;
+    comparative: string | number | null;
+    currency_code: string | null;
+    scale: "unknown" | "units" | "thousands" | "millions";
+    filing_id: number;
+  }>;
+  calculated_at: string;
+};
+
+export type Summary = {
+  company: { smv_rpj: string; ruc: string; legal_name: string; sector: string };
+  period: { year: number; period_code: string; scope: string };
+  metrics: Metric[];
+};
+
+export type Company = {
+  smv_rpj: string;
+  ruc: string | null;
+  legal_name: string;
+  company_type: string | null;
+  sector: string | null;
+  ciiu: string | null;
+  updated_at: string;
+};
+
+export type Filing = {
+  statement_type: "balance_sheet" | "income_statement" | "cash_flow";
+  fiscal_year: number;
+  period_code: string;
+  scope: "individual" | "consolidated";
+  currency_code: string | null;
+  reported_scale: "unknown" | "units" | "thousands" | "millions";
+  scale_source_url: string | null;
+  updated_at: string;
+  facts: number;
+  mapped_facts: number;
+  failed_validations: number;
+};
+
+export type FinancialFact = {
+  account_code: string;
+  original_label: string;
+  normalized_concept: string | null;
+  current_amount: string | number;
+  comparative_amount: string | number | null;
+  value_kind: "monetary" | "per_share" | "shares" | "other";
+  fact_scale: "unknown" | "units" | "thousands" | "millions";
+  normalization_status: "mapped" | "unmapped" | "excluded";
+};
+
+export type FinancialStatement = {
+  filing: Filing & {
+    smv_rpj: string;
+    legal_name: string;
+    statement_type: Filing["statement_type"];
+    currency_raw: string;
+    provider: string;
+    endpoint: string;
+    operation: string;
+    retrieved_at: string;
+    payload_sha256: string;
+  };
+  facts: FinancialFact[];
+  validations: Array<{
+    rule_code: string;
+    status: "passed" | "failed" | "not_applicable";
+    details: Record<string, unknown>;
+    checked_at: string;
+  }>;
+};
+
+export type CorporateEventCategory =
+  | "dividends"
+  | "management"
+  | "meetings"
+  | "debt"
+  | "operations"
+  | "litigation"
+  | "production"
+  | "other";
+
+export type CorporateEvent = {
+  id: number;
+  smv_rpj: string;
+  legal_name: string;
+  source_provider: string;
+  external_id: string;
+  version: number;
+  category: CorporateEventCategory;
+  title: string;
+  summary: string;
+  published_at: string;
+  effective_date: string | null;
+  source_url: string;
+  source_document_name: string;
+  source_sha256: string;
+  retrieved_at: string;
+};
+
+export type NoteTopic =
+  | "debt"
+  | "segments"
+  | "capex_assets"
+  | "impairment"
+  | "provisions_closure"
+  | "contingencies"
+  | "related_parties"
+  | "estimates"
+  | "subsequent_events"
+  | "other";
+
+export type NoteDocument = {
+  fiscal_year: number;
+  period_code: string;
+  scope: "individual" | "consolidated";
+  version: number;
+  document_name: string;
+  source_url: string;
+  source_sha256: string;
+  page_count: number;
+  notes_count: number;
+  extraction_status: "extracted" | "reviewed" | "warning";
+  retrieved_at: string;
+  last_checked_at: string | null;
+};
+
+export type FinancialNoteSummary = {
+  id: number;
+  note_number: number;
+  original_title: string;
+  topic: NoteTopic;
+  is_priority: boolean;
+  start_page: number;
+  end_page: number;
+  extraction_status: "extracted" | "reviewed" | "warning";
+  excerpt: string;
+};
+
+export type NotesResponse = {
+  document: NoteDocument;
+  notes: FinancialNoteSummary[];
+  sync: {
+    status: "queued" | "running" | "retrying" | "completed" | "failed";
+    attempts: number;
+    completed_at: string | null;
+    error_message: string | null;
+  } | null;
+};
+
+export type FinancialNoteDetail = {
+  note: {
+    note_number: number;
+    original_title: string;
+    topic: NoteTopic;
+    is_priority: boolean;
+    start_page: number;
+    end_page: number;
+    content_text: string;
+    extraction_status: "extracted" | "reviewed" | "warning";
+    document_name: string;
+    source_url: string;
+    source_sha256: string;
+    version: number;
+    fiscal_year: number;
+    period_code: string;
+    scope: "individual" | "consolidated";
+    retrieved_at: string;
+    legal_name: string;
+    smv_rpj: string;
+  };
+  sections: Array<{
+    page_number: number;
+    section_order: number;
+    content_text: string;
+  }>;
+};

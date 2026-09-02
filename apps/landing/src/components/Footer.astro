@@ -1,0 +1,23 @@
+---
+import Logo from "./Logo.astro";
+import { site } from "../config";
+---
+<footer>
+  <div class="shell footer-grid">
+    <div><Logo light /><p>Investigación financiera verificable para el mercado peruano.</p></div>
+    <div><h2>Producto</h2><a href="/como-funciona">Cómo funciona</a><a href="/casos/buenaventura-2025">Casos</a><a href={`${site.appUrl}/registro`}>Crear cuenta</a></div>
+    <div><h2>Información</h2><a href="/preguntas-frecuentes">FAQ</a><a href="/ubicacion">Ubicación</a><a href="/privacidad">Privacidad</a><a href="/contacto">Contacto</a></div>
+  </div>
+  <div class="shell legal"><span>© {new Date().getFullYear()} Fundamenta</span><span>No constituye recomendación de inversión.</span></div>
+</footer>
+
+<style>
+  footer { background: var(--ink); color: #cbcfc8; padding: 4.5rem 0 6rem; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; }
+  footer p { max-width: 27rem; margin-top: 1.2rem; }
+  footer h2 { color: white; font-size: .75rem; text-transform: uppercase; letter-spacing: .13em; margin: .35rem 0 1.1rem; }
+  footer a:not(.logo) { display: block; color: #cbcfc8; margin: .7rem 0; }
+  footer a:hover { color: white; }
+  .legal { border-top: 1px solid #ffffff20; margin-top: 3.5rem; padding-top: 1.4rem; display: flex; justify-content: space-between; font-size: .78rem; }
+  @media (max-width: 720px) { .footer-grid { grid-template-columns: 1fr 1fr; } .footer-grid > :first-child { grid-column: 1/-1; } .legal { flex-direction: column; gap: .5rem; } }
+</style>

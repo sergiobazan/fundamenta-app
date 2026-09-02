@@ -1,0 +1,10 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import { site } from "../config";
+---
+<BaseLayout title="Gracias por contactarnos | Fundamenta" description="Hemos recibido tu interés en el piloto de Fundamenta." noindex>
+  <Breadcrumbs items={[{label:'Inicio',href:'/'},{label:'Gracias'}]} />
+  <section class="thanks shell"><div class="check">✓</div><span class="eyebrow">Solicitud registrada</span><h1>Gracias por interesarte.</h1><p class="lead">Cuando el formulario de producción esté conectado, esta página confirmará el envío. La promesa será responder en un día hábil.</p><div><a class="button" href="/casos/buenaventura-2025">Ver el caso real</a><a class="button ghost" href={`${site.appUrl}/registro`}>Crear cuenta</a></div></section>
+</BaseLayout>
+<style>.thanks{text-align:center;padding:7rem 0 9rem}.thanks .check{display:grid;place-items:center;margin:0 auto 1.5rem;width:5rem;height:5rem;border-radius:50%;background:var(--mint);color:var(--green);font-size:2rem}.thanks h1{font-size:clamp(2.5rem,5vw,4.5rem);margin:1rem 0}.thanks .lead{margin:0 auto 2rem}.thanks>div:last-child{display:flex;justify-content:center;gap:.7rem;flex-wrap:wrap}</style>

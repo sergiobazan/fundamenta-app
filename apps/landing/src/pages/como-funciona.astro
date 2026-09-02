@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import { site } from "../config";
+---
+<BaseLayout title="Cómo funciona Fundamenta | Datos, métricas y fuentes" description="Conoce cómo Fundamenta recopila, normaliza, valida y presenta información financiera oficial sin ocultar fórmulas ni fuentes.">
+  <Breadcrumbs items={[{label:'Inicio',href:'/'},{label:'Cómo funciona'}]} />
+  <section class="page-hero shell"><span class="eyebrow">Proceso verificable</span><h1>De información dispersa a evidencia comparable.</h1><p class="lead">El pipeline separa extracción, normalización, cálculo y explicación. Si una etapa no pasa sus controles, el dato no avanza silenciosamente.</p></section>
+  <section class="section white"><div class="shell flow">
+    <article><b>01</b><div><h2>Recopilación oficial</h2><p>Consultamos primero la información estructurada de la SMV. Conservamos la respuesta original, la fecha de recuperación y una huella digital para detectar cambios.</p><span>Salida: fuente preservada</span></div></article>
+    <article><b>02</b><div><h2>Normalización explícita</h2><p>Relacionamos las etiquetas reportadas con conceptos comunes. La etiqueta original nunca desaparece y cada valor conserva moneda, escala, periodo y alcance.</p><span>Salida: conceptos comparables</span></div></article>
+    <article><b>03</b><div><h2>Validaciones contables</h2><p>Comprobamos igualdades básicas y consistencia. Un fallo queda visible y bloquea la publicación automática.</p><span>Salida: estado de calidad</span></div></article>
+    <article><b>04</b><div><h2>Métricas reproducibles</h2><p>Las fórmulas corren en código versionado, no en un modelo generativo. Los insumos usados acompañan cada resultado.</p><span>Salida: indicador trazable</span></div></article>
+  </div></section>
+  <section class="section"><div class="shell boundaries"><div><span class="eyebrow">Límites del producto</span><h2>Lo que no hace.</h2></div><ul><li>No decide si una acción es “buena”.</li><li>No predice precios ni rentabilidades.</li><li>No inventa cifras ausentes.</li><li>No reemplaza la lectura de riesgos y notas.</li><li>No constituye asesoría financiera personalizada.</li></ul></div></section>
+  <section class="mini-cta"><div class="shell"><h2>Compruébalo con un caso real.</h2><a class="button coral" href={`${site.appUrl}/registro`}>Abrir el panel →</a></div></section>
+</BaseLayout>
+<style>
+  .flow article{display:grid;grid-template-columns:7rem 1fr;gap:2rem;padding:3rem 0;border-top:1px solid var(--line)}.flow article>b{font:800 3rem var(--font-display);color:var(--coral)}.flow h2{font-size:2rem;margin-bottom:.8rem}.flow p{max-width:690px;color:var(--muted)}.flow span{color:var(--green);font-size:.78rem;font-weight:700}.boundaries{display:grid;grid-template-columns:1fr 1fr;gap:6rem}.boundaries li{padding:1rem 0;border-bottom:1px solid var(--line)}.mini-cta{padding:4rem 0;background:var(--ink);color:white}.mini-cta .shell{display:flex;justify-content:space-between;align-items:center}.mini-cta h2{margin:0;font-size:2rem}@media(max-width:650px){.flow article{grid-template-columns:1fr;gap:.5rem}.flow article>b{font-size:1rem}.boundaries{grid-template-columns:1fr;gap:1rem}.mini-cta .shell{display:block}.mini-cta a{margin-top:1rem}}
+</style>
