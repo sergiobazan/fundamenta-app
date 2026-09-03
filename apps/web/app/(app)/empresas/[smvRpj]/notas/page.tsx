@@ -44,7 +44,7 @@ export default async function NotesPage({
 
     <section className="note-source-bar">
       <div><span>✓</span><p><b>{data.document.document_name}</b><small>{data.document.page_count} páginas · versión {data.document.version} · extracción referenciada</small></p></div>
-      <a href={data.document.source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a>
+      <div className="note-source-actions"><Link href={`/empresas/${smvRpj}/notas/comparar`}>Comparar 2025 vs. 2024 →</Link><a href={data.document.source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a></div>
     </section>
 
     <form className="notes-filters" action={`/empresas/${smvRpj}/notas`} method="get">

@@ -6,8 +6,11 @@ import os
 import sys
 
 from app.bootstrap import run_bootstrap
+from app.cited_summaries import sync_cited_summaries
 from app.config import get_settings
+from app.db import connect
 from app.migrations import run_migrations
+from app.narrative_comparisons import sync_narrative_comparisons
 
 logger = logging.getLogger("fundamenta.runtime")
 
@@ -36,6 +39,24 @@ def prepare_database(service: str) -> None:
                 "La sincronización periódica de notas falló; la API continuará disponible"
             )
 
+    with connect() as connection:
+        summaries = sync_cited_summaries(connection)
+        connection.commit()
+    logger.info(
+        "Resúmenes citados listos: %s creados, %s existentes",
+        summaries["created"],
+        summaries["unchanged"],
+    )
+
+    with connect() as connection:
+        comparisons = sync_narrative_comparisons(connection)
+        connection.commit()
+    logger.info(
+        "Comparaciones narrativas listas: %s creadas, %s existentes",
+        comparisons["created"],
+        comparisons["unchanged"],
+    )
+
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -60,6 +81,7 @@ def main() -> None:
         ]
     else:
         command = [sys.executable, "-m", "app.notes_worker"]
+    os.environ["FUNDAMENTA_DATABASE_PREPARED"] = "1"
     os.execv(sys.executable, command)
 
 

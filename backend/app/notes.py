@@ -14,8 +14,21 @@ import httpx
 from psycopg import Connection
 from pypdf import PdfReader
 
-NOTE_HEADING_RE = re.compile(r"(?m)^[ \t]*(\d{1,2})\.[ \t]+([^\n]{3,180})")
+from app.cited_summaries import generate_and_store_cited_summary
+
+NOTE_HEADING_RE = re.compile(r"(?m)^[ \t]*(\d{1,2})(\.)?[ \t]+([^\n]{3,180})")
+MALFORMED_NOTE_HEADING_RE = re.compile(
+    r"(?m)^[ \t]*\.[ \t]+(Juicios, estimados y supuestos contables significativos)[ \t]*$",
+    re.IGNORECASE,
+)
 NOTES_MARKER = "notas a los estados financieros consolidados"
+APPENDIX_HEADING_RE = re.compile(
+    r"(?im)^[ \t]*(?:informaci[oó]n suplementaria|recursos minerales y reservas "
+    r"probadas y probables)\b"
+)
+WRAPPED_FINANCIAL_POSITION_TITLE_RE = re.compile(
+    r"\r?\n[ \t]*(FINANCIERA)[ \t]*(?:\r?\n|$)"
+)
 TRAILING_STOP_WORDS = {
     "al",
     "con",
@@ -142,7 +155,10 @@ def load_note_sources(path: Path) -> tuple[NoteSourceConfig, ...]:
 def classify_note_topic(title: str) -> str:
     normalized = _normalized(title)
     rules = (
-        ("subsequent_events", ("hechos posteriores", "eventos subsecuentes")),
+        (
+            "subsequent_events",
+            ("hechos posteriores", "eventos posteriores", "eventos subsecuentes"),
+        ),
         ("segments", ("segmento",)),
         ("contingencies", ("contingenc", "compromiso")),
         ("related_parties", ("relacionad", "entidades asociadas", "partes relacionadas")),
@@ -170,8 +186,25 @@ def _clean_title(value: str) -> str:
     return " ".join(value.split()).rstrip(" –-:")
 
 
-def _plausible_title(value: str) -> bool:
+def _complete_wrapped_title(
+    page_text: str, *, title: str, end_offset: int
+) -> tuple[str, int]:
+    """Recupera la última palabra cuando el PDF parte un título entre líneas."""
+    if not _normalized(title).endswith("estado consolidado de situacion"):
+        return title, end_offset
+    continuation = WRAPPED_FINANCIAL_POSITION_TITLE_RE.match(page_text, end_offset)
+    if continuation is None:
+        return title, end_offset
+    return f"{title} {continuation.group(1)}", continuation.end()
+
+
+def _plausible_title(value: str, *, dotted_heading: bool = True) -> bool:
     if not value or len(value) > 120:
+        return False
+    # Algunos informes auditados (por ejemplo, Volcan) omiten el punto después
+    # del número de nota. En ese formato los títulos son versales. Exigirlas
+    # evita interpretar fechas como "31 de diciembre..." como una nota.
+    if not dotted_heading and value != value.upper():
         return False
     last_word = value.rstrip(". ").split()[-1].lower()
     return last_word not in TRAILING_STOP_WORDS
@@ -182,7 +215,8 @@ def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
         (
             index
             for index, text in enumerate(page_texts)
-            if NOTES_MARKER in _normalized(text) and re.search(r"(?m)^\s*1\.\s+", text)
+            if NOTES_MARKER in _normalized(text)
+            and re.search(r"(?m)^\s*1(?:\.|\s)\s*", text)
         ),
         None,
     )
@@ -192,18 +226,42 @@ def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
     headings: list[_Heading] = []
     expected_number = 1
     for page_index in range(start_page, len(page_texts)):
-        for match in NOTE_HEADING_RE.finditer(page_texts[page_index]):
-            note_number = int(match.group(1))
-            title = _clean_title(match.group(2))
-            if note_number != expected_number or not _plausible_title(title):
+        candidates = [
+            (
+                match.start(),
+                match.end(),
+                int(match.group(1)),
+                match.group(3),
+                match.group(2) is not None,
+            )
+            for match in NOTE_HEADING_RE.finditer(page_texts[page_index])
+        ]
+        # Algunos PDFs oficiales tienen glifos sin mapa Unicode. En el informe de
+        # Buenaventura 2024 el "3" del encabezado de la nota 3 desaparece, aunque
+        # sus subapartados 3.1 y 3.2 sí están presentes. Sólo reparamos este título
+        # contable conocido y únicamente cuando la secuencia espera la nota 3.
+        candidates.extend(
+            (match.start(), match.end(), 3, match.group(1), True)
+            for match in MALFORMED_NOTE_HEADING_RE.finditer(page_texts[page_index])
+        )
+        for start_offset, end_offset, note_number, raw_title, dotted_heading in sorted(
+            candidates
+        ):
+            title = _clean_title(raw_title)
+            title, end_offset = _complete_wrapped_title(
+                page_texts[page_index], title=title, end_offset=end_offset
+            )
+            if note_number != expected_number or not _plausible_title(
+                title, dotted_heading=dotted_heading
+            ):
                 continue
             headings.append(
                 _Heading(
                     note_number=note_number,
                     title=title,
                     page_index=page_index,
-                    start_offset=match.start(),
-                    end_offset=match.end(),
+                    start_offset=start_offset,
+                    end_offset=end_offset,
                 )
             )
             expected_number += 1
@@ -233,6 +291,11 @@ def extract_notes_from_pages(page_texts: list[str]) -> tuple[ExtractedNote, ...]
         index for index, text in enumerate(page_texts) if NOTES_MARKER in _normalized(text)
     ]
     last_notes_page = max(notes_pages)
+    # Algunos emisores sólo imprimen el rótulo "Notas..." en la primera página.
+    # Si hay encabezados posteriores, el documento auditado continúa hasta el
+    # final y no debemos recortar la última nota en su propia página.
+    if last_notes_page < headings[-1].page_index:
+        last_notes_page = len(page_texts) - 1
     notes: list[ExtractedNote] = []
 
     for heading_index, heading in enumerate(headings):
@@ -245,6 +308,11 @@ def extract_notes_from_pages(page_texts: list[str]) -> tuple[ExtractedNote, ...]
             end_offset = len(page_texts[page_index])
             if next_heading and page_index == next_heading.page_index:
                 end_offset = next_heading.start_offset
+            appendix_heading = None if next_heading else APPENDIX_HEADING_RE.search(
+                page_texts[page_index], start_offset
+            )
+            if appendix_heading:
+                end_offset = appendix_heading.start()
             section_text = _clean_section_text(page_texts[page_index][start_offset:end_offset])
             if section_text:
                 sections.append(
@@ -254,6 +322,8 @@ def extract_notes_from_pages(page_texts: list[str]) -> tuple[ExtractedNote, ...]
                         content_text=section_text,
                     )
                 )
+            if appendix_heading:
+                break
 
         if not sections:
             raise ValueError(f"La nota {heading.note_number} no contiene texto extraíble")
@@ -421,6 +491,27 @@ def store_note_document(
                     for section in note.sections
                 ],
             )
+            cursor.executemany(
+                """
+                INSERT INTO source_fragments (
+                    company_id, note_document_id, financial_note_id,
+                    fragment_order, page_number, heading_text, content_text
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                [
+                    (
+                        source["company_id"],
+                        document_id,
+                        note_id,
+                        section.section_order,
+                        section.page_number,
+                        note.original_title,
+                        section.content_text,
+                    )
+                    for section in note.sections
+                ],
+            )
+            generate_and_store_cited_summary(connection, note_id)
 
     return {
         "status": "imported" if next_version == 1 else "versioned",

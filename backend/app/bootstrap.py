@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from app.cited_summaries import sync_cited_summaries
 from app.config import (
     Settings,
     get_bootstrap_events_path,
@@ -18,6 +19,7 @@ from app.events import import_events
 from app.ingestion import filter_company_rows, store_statement
 from app.metrics import calculate_and_store_metrics
 from app.migrations import run_migrations
+from app.narrative_comparisons import sync_narrative_comparisons
 from app.notes import NoteSourceConfig, load_note_sources
 from app.notes_jobs import (
     enqueue_monthly_jobs,
@@ -29,7 +31,7 @@ from app.smv.client import SmvClient
 
 logger = logging.getLogger("fundamenta.bootstrap")
 BOOTSTRAP_LOCK_NAME = "fundamenta_initial_data_bootstrap"
-COMPANY_RPJS = ("B20003", "A20032")
+COMPANY_RPJS = ("B20003", "A20032", "CM0001", "B20041")
 STATEMENT_TYPES = ("balance_sheet", "income_statement", "cash_flow")
 
 
@@ -39,7 +41,7 @@ def is_bootstrap_complete(
     return (
         status["companies"] == len(COMPANY_RPJS)
         and status["filings"] == len(COMPANY_RPJS) * len(STATEMENT_TYPES)
-        and status["facts"] >= 300
+        and status["facts"] >= len(COMPANY_RPJS) * 150
         and status["computed_metrics"] == len(COMPANY_RPJS) * 15
         and status["unavailable_metrics"] == 0
         and status["failed_validations"] == 0
@@ -120,7 +122,13 @@ def bootstrap_status(expected_events: int, expected_note_sources: int) -> dict[s
 def ingest_initial_statements(
     settings: Settings, note_sources: tuple[NoteSourceConfig, ...]
 ) -> list[dict[str, Any]]:
-    source_urls = {source.company_rpj: source.source_url for source in note_sources}
+    source_urls = {
+        source.company_rpj: source.source_url
+        for source in note_sources
+        if source.fiscal_year == 2025
+        and source.period_code == "A"
+        and source.scope == "consolidated"
+    }
     missing_urls = sorted(set(COMPANY_RPJS) - source_urls.keys())
     if missing_urls:
         raise ValueError(f"Faltan fuentes de escala para: {', '.join(missing_urls)}")
@@ -210,6 +218,15 @@ def sync_initial_notes(
     return results
 
 
+def sync_note_analyses() -> dict[str, Any]:
+    """Actualiza derivados aunque los PDF no hayan cambiado en este ciclo."""
+    with connect() as connection:
+        summaries = sync_cited_summaries(connection)
+        comparisons = sync_narrative_comparisons(connection)
+        connection.commit()
+    return {"summaries": summaries, "comparisons": comparisons}
+
+
 def run_bootstrap(*, force: bool = False) -> dict[str, Any]:
     settings = get_settings()
     migrations = run_migrations()
@@ -222,18 +239,21 @@ def run_bootstrap(*, force: bool = False) -> dict[str, Any]:
         lock_connection.commit()
         try:
             before = bootstrap_status(len(event_payloads), len(note_sources))
+            existing_note_analyses = sync_note_analyses()
             if before["complete"] and not force:
                 return {
                     "status": "already_complete",
                     "migrations": migrations,
                     "before": before,
                     "after": before,
+                    "note_analyses": existing_note_analyses,
                 }
 
             statements = ingest_initial_statements(settings, note_sources)
             metrics = calculate_initial_metrics()
             events = import_initial_events(event_payloads)
             notes = sync_initial_notes(settings, note_sources)
+            note_analyses = sync_note_analyses()
             after = bootstrap_status(len(event_payloads), len(note_sources))
             if not after["complete"]:
                 raise RuntimeError(f"La verificación final del bootstrap falló: {after}")
@@ -247,6 +267,7 @@ def run_bootstrap(*, force: bool = False) -> dict[str, Any]:
                     "metrics": metrics,
                     "events": events,
                     "notes": notes,
+                    "note_analyses": note_analyses,
                 },
             }
         finally:

@@ -8,15 +8,19 @@ No es necesario abrir una consola ni ejecutar comandos SQL después del desplieg
 La API ejecuta `app.runtime` antes de iniciar su proceso normal. Ese módulo:
 
 1. toma un bloqueo de PostgreSQL para que sólo una instancia inicialice la base;
-2. descubre y aplica en orden las seis migraciones de `infra/postgres/init`;
+2. descubre y aplica en orden las doce migraciones de `infra/postgres/init`;
 3. registra cada migración y su SHA-256 en `schema_migrations`;
 4. comprueba si el corte inicial ya está completo;
-5. si falta información, descarga los tres estados financieros consolidados 2025 de
-   la SMV y almacena Buenaventura y Minsur;
+5. si falta información, descarga desde la SMV los tres tipos de estado financiero
+   consolidado 2025 para Buenaventura, Minsur, Volcan y Poderosa;
 6. calcula las 15 métricas de cada empresa;
 7. importa los cuatro eventos oficiales curados;
-8. descarga, extrae y versiona las notas financieras de los dos PDF oficiales;
-9. valida cantidades mínimas, métricas disponibles y controles contables.
+8. descarga, extrae y versiona las notas financieras 2025 y 2024 de ocho PDF oficiales;
+9. indexa cada fragmento de las notas por empresa, documento, ejercicio y página;
+10. genera resúmenes extractivos con citas y estados de evidencia insuficiente;
+11. empareja las notas de ambos ejercicios y fija la evidencia utilizada en la
+    comparación narrativa;
+12. valida cantidades mínimas, métricas disponibles y controles contables.
 
 Si Render reinicia, despierta o redespliega el servicio, no se duplican filings,
 métricas, eventos ni documentos de notas. En cada nuevo mes el arranque de la API
@@ -50,7 +54,7 @@ operación permanente, y tiene estas restricciones:
 3. Conecta el repositorio y deja que Render lea `render.yaml`.
 4. Revisa región y planes y confirma la creación.
 5. Espera a que termine la carga inicial; la primera ejecución tarda más porque
-   consulta la SMV y procesa dos PDF completos.
+   consulta la SMV y procesa ocho PDF completos.
 6. Verifica `https://<servicio-api>.onrender.com/health` y luego `/companies`.
 
 En los logs debe aparecer `Inicialización de datos: completed` la primera vez y
@@ -74,7 +78,7 @@ conectarse a PostgreSQL.
 
 - Una migración ya aplicada no vuelve a ejecutarse. Si su archivo cambia, el
   arranque se detiene para evitar una base con historial ambiguo; una modificación
-  de esquema posterior debe agregarse como `007_*.sql`.
+  de esquema posterior debe agregarse como una migración nueva y consecutiva.
 - Una caída durante una migración revierte esa migración completa.
 - Una caída durante la carga de datos puede dejar una parte válida ya guardada. El
   siguiente arranque vuelve a comprobar el conjunto y completa lo faltante mediante

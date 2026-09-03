@@ -5,6 +5,8 @@ import type {
   CorporateEventCategory,
   Filing,
   FinancialNoteDetail,
+  FragmentSearchResponse,
+  NarrativeComparison,
   NoteTopic,
   NotesResponse,
   FinancialStatement,
@@ -81,11 +83,76 @@ export function getNotes(
   );
 }
 
-export function getNote(smvRpj: string, noteNumber: number, year = 2025) {
+export function getNote(
+  smvRpj: string,
+  noteNumber: number,
+  {
+    year = 2025,
+    period = "A",
+    scope = "consolidated",
+  }: {
+    year?: number;
+    period?: "A" | "1" | "2" | "3" | "4";
+    scope?: "individual" | "consolidated";
+  } = {},
+) {
   return apiGet<FinancialNoteDetail>(
     `/companies/${encodeURIComponent(smvRpj)}/notes/${noteNumber}` +
-      `?year=${year}&period=A&scope=consolidated`,
+      `?year=${year}&period=${period}&scope=${scope}`,
   );
+}
+
+export function getNoteComparison(
+  smvRpj: string,
+  {
+    currentYear = 2025,
+    previousYear = 2024,
+    topic,
+    priorityOnly = true,
+  }: {
+    currentYear?: number;
+    previousYear?: number;
+    topic?: NoteTopic;
+    priorityOnly?: boolean;
+  } = {},
+) {
+  const params = new URLSearchParams({
+    current_year: String(currentYear),
+    previous_year: String(previousYear),
+    period: "A",
+    scope: "consolidated",
+    priority_only: String(priorityOnly),
+  });
+  if (topic) params.set("topic", topic);
+  return apiGet<NarrativeComparison>(
+    `/companies/${encodeURIComponent(smvRpj)}/note-comparisons?${params.toString()}`,
+  );
+}
+
+export function searchFragments({
+  query,
+  companyRpj,
+  topic,
+  year,
+  limit = 20,
+  offset = 0,
+}: {
+  query: string;
+  companyRpj?: string;
+  topic?: NoteTopic;
+  year?: number;
+  limit?: number;
+  offset?: number;
+}) {
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (companyRpj) params.set("company_rpj", companyRpj);
+  if (topic) params.set("topic", topic);
+  if (year) params.set("year", String(year));
+  return apiGet<FragmentSearchResponse>(`/search/fragments?${params.toString()}`);
 }
 
 export const statementNames: Record<Filing["statement_type"], string> = {

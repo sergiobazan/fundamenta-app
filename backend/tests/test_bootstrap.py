@@ -3,10 +3,10 @@ from app.bootstrap import is_bootstrap_complete
 
 def complete_status() -> dict[str, int]:
     return {
-        "companies": 2,
-        "filings": 6,
-        "facts": 300,
-        "computed_metrics": 30,
+        "companies": 4,
+        "filings": 12,
+        "facts": 600,
+        "computed_metrics": 60,
         "unavailable_metrics": 0,
         "failed_validations": 0,
         "events": 4,

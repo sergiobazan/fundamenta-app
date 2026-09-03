@@ -8,8 +8,9 @@ El alcance actual descarga estados financieros desde el servicio oficial de dato
 abiertos de la SMV, conserva la respuesta cruda, filtra una empresa por su código RPJ,
 normaliza un conjunto pequeño de conceptos y ejecuta una validación contable.
 
-Los recorridos reales con Buenaventura y Minsur 2025 ya fueron ejecutados y verificados. Los
-resultados se encuentran en [`docs/FASE_0_RESULTADOS.md`](docs/FASE_0_RESULTADOS.md).
+Los recorridos reales con Buenaventura, Minsur, Volcan y Poderosa 2025 ya fueron ejecutados y
+verificados. Los primeros resultados se encuentran en
+[`docs/FASE_0_RESULTADOS.md`](docs/FASE_0_RESULTADOS.md).
 La incorporación verificada del estado de resultados y flujo de efectivo está en
 [`docs/FASE_1_RESULTADOS_Y_FLUJO.md`](docs/FASE_1_RESULTADOS_Y_FLUJO.md).
 Las métricas y el contrato disponible antes de iniciar Next.js están en
@@ -21,6 +22,19 @@ legales de esta etapa están en
 [`docs/FASE_6_EVENTOS_OFICIALES.md`](docs/FASE_6_EVENTOS_OFICIALES.md).
 La extracción, versionado y sincronización automática de notas auditadas están en
 [`docs/FASE_7_NOTAS_FINANCIERAS.md`](docs/FASE_7_NOTAS_FINANCIERAS.md).
+El índice de fragmentos, la búsqueda documental y sus referencias por página están en
+[`docs/FASE_8_INDICE_DOCUMENTAL.md`](docs/FASE_8_INDICE_DOCUMENTAL.md).
+Los resúmenes extractivos, sus citas y reglas de abstención están documentados en
+[`docs/FASE_9_RESUMENES_CITADOS.md`](docs/FASE_9_RESUMENES_CITADOS.md).
+La comparación documental 2025–2024 de las notas, con equivalencias versionadas y
+citas en ambos períodos, está en
+[`docs/FASE_10_COMPARACION_NARRATIVA.md`](docs/FASE_10_COMPARACION_NARRATIVA.md).
+La incorporación de Volcan y la auditoría de alcance de las cinco empresas restantes
+están en
+[`docs/FASE_11_AMPLIACION_COBERTURA_VOLCAN.md`](docs/FASE_11_AMPLIACION_COBERTURA_VOLCAN.md).
+La incorporación de Poderosa, incluida su moneda PEN y la comparación de notas
+2025–2024, está en
+[`docs/FASE_12_AMPLIACION_COBERTURA_PODEROSA.md`](docs/FASE_12_AMPLIACION_COBERTURA_PODEROSA.md).
 El arranque automático sobre una base vacía y el Blueprint de Render se explican en
 [`docs/DESPLIEGUE_RENDER_DATOS_INICIALES.md`](docs/DESPLIEGUE_RENDER_DATOS_INICIALES.md).
 El Blueprint actual usa únicamente una API y un PostgreSQL gratuitos. En ese nivel,
@@ -51,7 +65,7 @@ uv sync
 npm install
 ```
 
-Las seis migraciones y la carga inicial se ejecutan automáticamente al iniciar la API
+Las doce migraciones y la carga inicial se ejecutan automáticamente al iniciar la API
 o el worker. Para preparar la base explícitamente durante desarrollo también puedes
 usar:
 
@@ -59,9 +73,10 @@ usar:
 PYTHONPATH=backend uv run python -m app.bootstrap
 ```
 
-El comando es idempotente: en una base vacía aplica las seis migraciones y carga
-Buenaventura, Minsur, sus métricas, cuatro eventos y las notas; en una base completa
-termina sin volver a descargar las fuentes.
+El comando es idempotente: en una base vacía aplica las doce migraciones y carga
+Buenaventura, Minsur, Volcan, Poderosa, sus métricas, cuatro eventos y las notas
+auditadas 2025 y 2024;
+en una base completa termina sin volver a descargar las fuentes.
 
 En tres terminales:
 
@@ -71,6 +86,9 @@ npm run dev:landing
 npm run dev:web
 ```
 
+El arranque directo con Uvicorn también ejecuta la preparación idempotente. Esto evita
+que una base local existente quede con migraciones antiguas al actualizar el código.
+
 Abre:
 
 - Landing: `http://localhost:4321`
@@ -78,21 +96,8 @@ Abre:
 - Directorio autenticado: `http://localhost:3000/empresas`
 - Comparador autenticado: `http://localhost:3000/comparador`
 - Eventos oficiales autenticados: `http://localhost:3000/eventos`
+- Búsqueda documental autenticada: `http://localhost:3000/buscar`
 - API: `http://localhost:8000/docs`
-
-### Usuario local de prueba
-
-- Correo: `demo@fundamenta.pe`
-- Contraseña: `Demo-Fundamenta-2026!`
-
-Para recrearlo o cambiar la contraseña:
-
-```bash
-PYTHONPATH=backend uv run python -m app.cli seed-user \
-  --email demo@fundamenta.pe \
-  --password 'Demo-Fundamenta-2026!' \
-  --name 'Usuario Demo'
-```
 
 ## Configuración de la landing
 
@@ -156,12 +161,14 @@ Endpoints iniciales:
 - `GET /health`
 - `GET /companies`
 - `GET /events?company_rpj=A20032&category=dividends&limit=50`
+- `GET /search/fragments?q=deuda+financiera&company_rpj=A20032&topic=debt&year=2025`
 - `GET /companies/{smv_rpj}/filings`
 - `GET /companies/{smv_rpj}/statements/{statement_type}?year=2025`
 - El parámetro `normalized_only=true` limita la respuesta a conceptos normalizados.
 - `GET /companies/{smv_rpj}/summary?year=2025`
 - `GET /companies/{smv_rpj}/notes?year=2025&period=A&scope=consolidated`
 - `GET /companies/{smv_rpj}/notes/{note_number}?year=2025&period=A&scope=consolidated`
+  incluye el resumen citado, su confianza, fecha de corte y evidencia por página.
 - `GET /docs`
 - `POST /auth/register`
 - `POST /auth/login`
@@ -174,14 +181,17 @@ Endpoints iniciales:
 
 - Fuente: Portal de Datos Abiertos de la SMV.
 - Servicio: `WebServiceInfoFinanciera.asmx`.
-- Empresas verificadas: Compañía de Minas Buenaventura S.A.A. (`B20003`) y
-  Minsur S.A. (`A20032`).
-- Corte común: tres estados anuales consolidados 2025, USD en miles.
+- Empresas verificadas: Compañía de Minas Buenaventura S.A.A. (`B20003`),
+  Minsur S.A. (`A20032`), Volcan Compañía Minera S.A.A. (`CM0001`) y Compañía
+  Minera Poderosa S.A.A. (`B20041`).
+- Corte común: cuatro estados anuales consolidados 2025; los tres primeros están en
+  USD y Poderosa en PEN, todos en miles.
 - Resultado: 15 métricas por compañía y comparador con control de compatibilidad.
 - Contexto corporativo inicial: cuatro eventos oficiales versionados de Buenaventura
   y Minsur, con fecha, resumen propio, enlace primario y huella SHA-256.
-- Notas auditadas 2025: 36 para Buenaventura y 38 para Minsur, versionadas y
-  referenciadas por página desde sus PDFs oficiales de la SMV.
+- Notas auditadas 2025: 36 para Buenaventura, 38 para Minsur, 38 para Volcan y 38
+  para Poderosa;
+  todas versionadas y referenciadas por página desde sus PDF oficiales de la SMV.
 
 ## Sincronización automática de notas
 
@@ -197,8 +207,9 @@ La respuesta del servicio identifica moneda, cuenta y montos, pero el diccionari
 público consultado no declara de forma explícita la escala (`unidades`, `miles` o
 `millones`). Por esa razón cada filing comienza con `reported_scale = 'unknown'`.
 La escala sólo se cambia al contrastarla con un documento oficial y se conserva la
-URL que la respalda. Para Buenaventura y Minsur 2025 consolidados, la documentación
-financiera oficial confirma `US$(000)`, por lo que se registra `thousands`.
+URL que la respalda. Para Buenaventura, Minsur y Volcan 2025 consolidados, la
+documentación financiera oficial confirma `US$(000)`; Poderosa reporta `S/(000)`.
+En los cuatro casos se registra `thousands` conservando su moneda original.
 
 ## Pruebas
 

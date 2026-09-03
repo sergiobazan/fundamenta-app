@@ -1,11 +1,16 @@
+import os
+from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 
 from app.auth import router as auth_router
+from app.cited_summaries import fetch_cited_summary
 from app.config import get_upload_dir
 from app.db import connect
+from app.document_search import search_source_fragments
+from app.narrative_comparisons import fetch_narrative_comparison
 
 NoteTopic = Literal[
     "debt",
@@ -20,7 +25,19 @@ NoteTopic = Literal[
     "other",
 ]
 
-app = FastAPI(title="Fundamenta API", version="0.2.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # `app.runtime` prepara producción antes de ejecutar Uvicorn. Este respaldo hace
+    # que `uvicorn app.main:app --reload` también aplique migraciones y bootstrap.
+    if os.environ.get("FUNDAMENTA_DATABASE_PREPARED") != "1":
+        from app.runtime import prepare_database
+
+        prepare_database("api")
+    yield
+
+
+app = FastAPI(title="Fundamenta API", version="0.2.0", lifespan=lifespan)
 app.include_router(auth_router)
 
 upload_dir = get_upload_dir()
@@ -92,6 +109,30 @@ def corporate_events(
             parameters,
         )
         return list(cursor.fetchall())
+
+
+@app.get("/search/fragments")
+def document_fragments(
+    q: Annotated[str, Query(min_length=2, max_length=100)],
+    company_rpj: Annotated[str | None, Query(max_length=30)] = None,
+    topic: Annotated[NoteTopic | None, Query()] = None,
+    year: int | None = Query(default=None, ge=2000, le=2100),
+    limit: int = Query(default=20, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+) -> dict:
+    query = " ".join(q.split())
+    if len(query) < 2:
+        raise HTTPException(status_code=422, detail="Search query is too short")
+    with connect() as connection:
+        return search_source_fragments(
+            connection,
+            query=query,
+            company_rpj=company_rpj,
+            topic=topic,
+            fiscal_year=year,
+            limit=limit,
+            offset=offset,
+        )
 
 
 @app.get("/companies/{smv_rpj}/filings")
@@ -211,6 +252,48 @@ def financial_notes(
     return {"document": document, "notes": notes, "sync": sync}
 
 
+@app.get("/companies/{smv_rpj}/note-comparisons")
+def note_period_comparison(
+    smv_rpj: str,
+    current_year: int = Query(ge=2001, le=2100),
+    previous_year: int = Query(ge=2000, le=2099),
+    period: Literal["A", "1", "2", "3", "4"] = "A",
+    scope: Literal["individual", "consolidated"] = "consolidated",
+    topic: Annotated[NoteTopic | None, Query()] = None,
+    priority_only: bool = False,
+) -> dict:
+    if previous_year != current_year - 1:
+        raise HTTPException(
+            status_code=422,
+            detail="La comparación narrativa requiere períodos consecutivos",
+        )
+    with connect() as connection:
+        comparison = fetch_narrative_comparison(
+            connection,
+            company_rpj=smv_rpj,
+            current_year=current_year,
+            previous_year=previous_year,
+            period_code=period,
+            scope=scope,
+        )
+    if comparison is None:
+        raise HTTPException(status_code=404, detail="Narrative comparison not found")
+
+    items = comparison["items"]
+    if topic:
+        items = [
+            item
+            for item in items
+            if (item["current"] and item["current"]["topic"] == topic)
+            or (item["previous"] and item["previous"]["topic"] == topic)
+        ]
+    if priority_only:
+        items = [item for item in items if item["is_priority"]]
+    comparison["items"] = items
+    comparison["visible_items"] = len(items)
+    return comparison
+
+
 @app.get("/companies/{smv_rpj}/notes/{note_number}")
 def financial_note_detail(
     smv_rpj: str,
@@ -254,7 +337,8 @@ def financial_note_detail(
             (note_id,),
         )
         sections = list(cursor.fetchall())
-    return {"note": note, "sections": sections}
+        summary = fetch_cited_summary(connection, note_id)
+    return {"note": note, "sections": sections, "summary": summary}
 
 
 @app.get("/companies/{smv_rpj}/statements/{statement_type}")

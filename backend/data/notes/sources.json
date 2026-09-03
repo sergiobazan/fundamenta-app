@@ -16,6 +16,22 @@
     ]
   },
   {
+    "source_key": "buenaventura-2024-consolidated-audited",
+    "company_rpj": "B20003",
+    "fiscal_year": 2024,
+    "period_code": "A",
+    "scope": "consolidated",
+    "language_code": "es",
+    "document_name": "BVN Consolidado 2024 - Informe auditado, estados financieros y notas",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/BVN%20CONSOLIDADO%202024.pdf",
+    "identity_tokens": [
+      "Compañía de Minas Buenaventura",
+      "Estados financieros consolidados",
+      "2024",
+      "Notas a los estados financieros consolidados"
+    ]
+  },
+  {
     "source_key": "minsur-2025-consolidated-audited",
     "company_rpj": "A20032",
     "fiscal_year": 2025,
@@ -29,6 +45,86 @@
       "Estados financieros consolidados",
       "2025",
       "Notas a los estados financieros consolidados"
+    ]
+  },
+  {
+    "source_key": "minsur-2024-consolidated-audited",
+    "company_rpj": "A20032",
+    "fiscal_year": 2024,
+    "period_code": "A",
+    "scope": "consolidated",
+    "language_code": "es",
+    "document_name": "Minsur Consolidado 2024 - Informe auditado, estados financieros y notas",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/Minsur%20Consolidado%202024.pdf",
+    "identity_tokens": [
+      "Minsur S.A. y Subsidiarias",
+      "Estados financieros consolidados",
+      "2024",
+      "Notas a los estados financieros consolidados"
+    ]
+  },
+  {
+    "source_key": "volcan-2025-consolidated-audited",
+    "company_rpj": "CM0001",
+    "fiscal_year": 2025,
+    "period_code": "A",
+    "scope": "consolidated",
+    "language_code": "es",
+    "document_name": "Volcan Consolidado 2025 - Informe auditado, estados financieros y notas",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/2025%20Anual%20Auditado%20Cons.pdf",
+    "identity_tokens": [
+      "Volcan Compañía Minera",
+      "Estados financieros consolidados",
+      "2025",
+      "Notas a los estados financieros consolidados"
+    ]
+  },
+  {
+    "source_key": "volcan-2024-consolidated-audited",
+    "company_rpj": "CM0001",
+    "fiscal_year": 2024,
+    "period_code": "A",
+    "scope": "consolidated",
+    "language_code": "es",
+    "document_name": "Volcan Consolidado 2024 - Informe auditado, estados financieros y notas",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/Volcan%20EEFF%20Consol%20Aud%2031dic2024.pdf",
+    "identity_tokens": [
+      "Volcan Compañía Minera",
+      "Estados financieros consolidados",
+      "2024",
+      "Notas a los estados financieros consolidados"
+    ]
+  },
+  {
+    "source_key": "poderosa-2025-consolidated-audited",
+    "company_rpj": "B20041",
+    "fiscal_year": 2025,
+    "period_code": "A",
+    "scope": "consolidated",
+    "language_code": "es",
+    "document_name": "Poderosa Consolidado 2025 - Informe auditado, estados financieros y notas",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/EEFF%20Anuales%20Auditados%20Consolidados%202025.pdf",
+    "identity_tokens": [
+      "Compañía Minera Poderosa",
+      "Estados Financieros Consolidados",
+      "2025",
+      "Notas a los Estados Financieros Consolidados"
+    ]
+  },
+  {
+    "source_key": "poderosa-2024-consolidated-audited",
+    "company_rpj": "B20041",
+    "fiscal_year": 2024,
+    "period_code": "A",
+    "scope": "consolidated",
+    "language_code": "es",
+    "document_name": "Poderosa Consolidado 2024 - Informe auditado, estados financieros y notas",
+    "source_url": "https://www.smv.gob.pe/ConsultasP8/temp/EEFF%20Anuales%20Auditados%20Consolidados%202024.pdf",
+    "identity_tokens": [
+      "Compañía Minera Poderosa",
+      "Estados Financieros Consolidados",
+      "2024",
+      "Notas a los Estados Financieros Consolidados"
     ]
   }
 ]

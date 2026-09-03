@@ -5,7 +5,7 @@ const faqs=[
   ['¿Fundamenta recomienda comprar o vender acciones?','No. Organiza información financiera y muestra indicadores con sus fuentes para apoyar tu propia investigación. No ofrece asesoría personalizada, señales ni promesas de rentabilidad.'],
   ['¿De dónde provienen los datos?','El MVP prioriza información oficial estructurada de la Superintendencia del Mercado de Valores (SMV) y documentos publicados por los emisores. Cada cifra importante conserva su referencia.'],
   ['¿La inteligencia artificial calcula los indicadores?','No. Las fórmulas financieras se ejecutan en código versionado y reproducible. Una IA futura podrá ayudar a explicar documentos, pero nunca sustituirá los cálculos ni una fuente verificable.'],
-  ['¿Qué empresas están disponibles?','Buenaventura y Minsur cuentan con estados consolidados 2025, métricas trazables y comparación homogénea. El alcance cerrado del MVP contempla ocho mineras peruanas, que se incorporarán sólo cuando sus datos pasen las validaciones.'],
+  ['¿Qué empresas están disponibles?','Buenaventura, Minsur, Volcan y Poderosa cuentan con estados consolidados 2025, métricas trazables y comparación controlada por moneda. El alcance cerrado del MVP contempla ocho mineras peruanas, que se incorporarán sólo cuando sus datos pasen las validaciones.'],
   ['¿Qué ocurre si falta un dato?','El indicador se marca como no disponible y explica qué componente falta. Fundamenta no estima cifras silenciosamente ni mezcla periodos incompatibles.'],
 ];
 const schema={"@context":"https://schema.org","@type":"FAQPage",mainEntity:faqs.map(([q,a])=>({"@type":"Question",name:q,acceptedAnswer:{"@type":"Answer",text:a}}))};

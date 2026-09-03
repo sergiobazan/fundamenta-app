@@ -105,7 +105,7 @@ El MVP cubrirá ocho empresas mineras no financieras:
 2. Minsur S.A.
 3. Volcan Compañía Minera S.A.A.
 4. Sociedad Minera Cerro Verde S.A.A.
-5. Compañía Minera Poderosa S.A.
+5. Compañía Minera Poderosa S.A.A.
 6. Nexa Resources Perú S.A.A.
 7. Sociedad Minera El Brocal S.A.A.
 8. Shougang Hierro Perú S.A.A.
@@ -601,6 +601,29 @@ El MVP estará terminado cuando:
 
 ## 19. Plan de desarrollo
 
+### Orden vigente de ejecución
+
+El desarrollo posterior a la Fase 10 se realizará en lotes verificables y en este
+orden. No se inicia un bloque posterior mientras el anterior conserve fallos críticos
+de exactitud o trazabilidad:
+
+1. **Ampliar cobertura de datos (máxima prioridad).** Incorporar progresivamente las
+   ocho empresas y los periodos acordados. Lotes completados: Volcan como tercera y
+   Poderosa como cuarta empresa, con estados consolidados 2025 y notas auditadas
+   2024–2025.
+2. **Endurecimiento de producto.** Seguridad, rendimiento, accesibilidad, copias de
+   seguridad y revisión legal.
+3. **Analítica y validación con usuarios.** Instrumentación mínima, pruebas observadas
+   y validación de disposición a pagar.
+4. **Completar eventos y alertas.** Ampliar fuentes oficiales, actualización y avisos.
+5. **Asistente con abstención y trazabilidad usando NVIDIA.** Sólo después de validar
+   cobertura, calidad y uso real; nunca se usará para calcular cifras financieras.
+6. **Pendientes post-MVP.** Incluye reconstrucción de tablas de notas y mejoras que no
+   bloquean el piloto.
+
+Las fases siguientes conservan el diseño técnico base ya ejecutado y sirven como
+registro histórico de sus entregables.
+
 ### Fase 0: exploración de datos
 
 - Confirmar fuentes, licencias y formatos.
@@ -636,9 +659,13 @@ El MVP estará terminado cuando:
   preservando encabezados, moneda, escala, periodos y referencia de página. Las tablas
   de baja confianza deben continuar mostrando el PDF original como respaldo.
 - OCR sólo donde sea necesario.
-- Índice de fragmentos.
-- Resúmenes citados.
-- Comparación narrativa.
+- Índice de fragmentos. **Implementado en la Fase 8:** búsqueda local en español,
+  filtros por empresa, tema y ejercicio, y referencias exactas a nota y página.
+- Resúmenes citados. **Implementado en la Fase 9:** hechos extractivos con cita cercana,
+  confianza, fecha de corte, interpretación separada y abstención ante texto insuficiente.
+- Comparación narrativa. **Implementada en la Fase 10:** emparejamiento reproducible
+  de notas 2025–2024, evidencia citada lado a lado, cobertura, confianza y abstención
+  cuando no existe una equivalencia documental suficiente.
 - Asistente con abstención y trazabilidad.
 
 ### Fase 4: eventos y validación
@@ -763,7 +790,8 @@ Salvo evidencia crítica nueva:
 - Toda cifra tiene trazabilidad.
 - Los datos inconsistentes no se publican.
 - La revisión humana forma parte de la operación inicial.
-- La validación comercial ocurre antes de ampliar cobertura.
+- La cobertura dentro del universo cerrado se amplía progresivamente y cada empresa
+  debe superar el mismo control de calidad antes de publicarse.
 
 ---
 
@@ -785,13 +813,14 @@ No se ampliará el alcance hasta responder estas preguntas con evidencia.
 
 ## 25. Próximos pasos inmediatos
 
-1. Confirmar el nombre del producto de trabajo.
-2. Ejecutar la fase 0 con una sola empresa y dos periodos.
-3. Crear el esquema de datos y el diccionario de conceptos.
-4. Construir un conjunto dorado revisado manualmente.
-5. Diseñar un prototipo navegable de las ocho pantallas.
-6. Reclutar usuarios para la prueba concierge.
-7. Revisar resultados antes de construir el asistente completo.
+1. Generalizar el corte por empresa para admitir estados individuales sin presentarlos
+   como consolidados.
+2. Incorporar Cerro Verde, Nexa Resources Perú, El Brocal y Shougang con su alcance
+   real publicado por la SMV.
+4. Completar cinco años y ocho trimestres por empresa, o publicar la razón verificable
+   de cada ausencia.
+5. Construir el conjunto dorado y revisar una muestra mínima de 200 observaciones por
+   empresa antes de cerrar la ampliación de cobertura.
 
 ---
 

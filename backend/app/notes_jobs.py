@@ -7,8 +7,10 @@ from zoneinfo import ZoneInfo
 
 from psycopg import Connection
 
+from app.cited_summaries import sync_cited_summaries
 from app.config import Settings
 from app.db import connect
+from app.narrative_comparisons import sync_narrative_comparisons
 from app.notes import NoteSourceConfig, download_pdf, store_note_document
 
 
@@ -207,6 +209,10 @@ def process_next_job(settings: Settings) -> dict[str, Any] | None:
         )
         with connect() as connection:
             result = store_note_document(connection, source=source, pdf_bytes=pdf_bytes)
+            # La comparación fija IDs de resúmenes para ser reproducible. Antes de
+            # crearla, completamos la versión vigente en ambos períodos.
+            sync_cited_summaries(connection)
+            sync_narrative_comparisons(connection)
             mark_job_completed(connection, job["id"], result)
             connection.commit()
         return {"job_id": job["id"], "source_key": source["source_key"], **result}

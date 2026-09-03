@@ -196,4 +196,121 @@ export type FinancialNoteDetail = {
     section_order: number;
     content_text: string;
   }>;
+  summary: CitedSummary | null;
+};
+
+export type CitedSummaryItem = {
+  text: string;
+  item_order: number;
+};
+
+export type CitedObservedFact = CitedSummaryItem & {
+  citation: {
+    source_fragment_id: number;
+    page_number: number;
+    document_name: string;
+    source_url: string;
+    document_version: number;
+  };
+};
+
+export type CitedSummary = {
+  generator_name: string;
+  generator_version: number;
+  generation_method: "extractive" | "ai";
+  status: "generated" | "partial" | "insufficient_evidence";
+  confidence: "high" | "medium" | "low";
+  confidence_reason: string;
+  information_cutoff: string;
+  input_sha256: string;
+  generated_at: string;
+  observed_facts: CitedObservedFact[];
+  interpretations: CitedSummaryItem[];
+  interpretation_status: "not_generated" | "generated";
+  missing_data: CitedSummaryItem[];
+};
+
+export type NarrativeComparisonNote = {
+  note_number: number;
+  title: string;
+  topic: NoteTopic;
+  summary: CitedSummary | null;
+};
+
+export type NarrativeComparisonItem = {
+  match_status: "matched" | "current_only" | "previous_only";
+  match_method: "normalized_title" | "title_similarity" | "none";
+  similarity_score: number;
+  confidence: "high" | "medium" | "low";
+  confidence_reason: string;
+  is_priority: boolean;
+  current: NarrativeComparisonNote | null;
+  previous: NarrativeComparisonNote | null;
+};
+
+export type NarrativeComparison = {
+  generator_name: string;
+  generator_version: number;
+  status: "generated" | "partial" | "insufficient_evidence";
+  confidence: "high" | "medium" | "low";
+  confidence_reason: string;
+  information_cutoff: string;
+  input_sha256: string;
+  generated_at: string;
+  smv_rpj: string;
+  legal_name: string;
+  current_year: number;
+  current_document_name: string;
+  current_source_url: string;
+  current_source_sha256: string;
+  current_document_version: number;
+  previous_year: number;
+  previous_document_name: string;
+  previous_source_url: string;
+  previous_source_sha256: string;
+  previous_document_version: number;
+  coverage: {
+    matched: number;
+    current_only: number;
+    previous_only: number;
+    current_total: number;
+    previous_total: number;
+  };
+  interpretation_status: "not_generated";
+  visible_items: number;
+  items: NarrativeComparisonItem[];
+};
+
+export type SourceFragment = {
+  id: number;
+  smv_rpj: string;
+  legal_name: string;
+  fiscal_year: number;
+  period_code: string;
+  scope: "individual" | "consolidated";
+  document_name: string;
+  source_url: string;
+  source_sha256: string;
+  document_version: number;
+  note_number: number;
+  original_title: string;
+  topic: NoteTopic;
+  is_priority: boolean;
+  page_number: number;
+  fragment_order: number;
+  excerpt: string;
+  rank: string | number;
+};
+
+export type FragmentSearchResponse = {
+  query: string;
+  total: number;
+  limit: number;
+  offset: number;
+  filters: {
+    company_rpj: string | null;
+    topic: NoteTopic | null;
+    fiscal_year: number | null;
+  };
+  results: SourceFragment[];
 };
