@@ -9,7 +9,7 @@ from typing import Any
 from psycopg import Connection
 
 from app.cited_summaries import sync_cited_summaries
-from app.config import Settings
+from app.config import Settings, get_settings
 from app.db import connect
 from app.ingestion import filter_company_rows, store_statement
 from app.metrics import calculate_and_store_metrics
@@ -18,7 +18,7 @@ from app.normalization import normalize_text
 from app.notes import download_pdf, store_note_document
 from app.smv.client import SmvClient, SmvResponse
 
-logger = logging.getLogger("fundamenta.company-analysis")
+logger = logging.getLogger("uvicorn.error.company-analysis")
 
 STATEMENT_TYPES = ("balance_sheet", "income_statement", "cash_flow")
 ANALYSIS_STEPS = ("statements", "metrics", "documents", "summaries")
@@ -416,8 +416,12 @@ def recover_stale_analysis_jobs(connection: Connection) -> int:
             SET status = 'retrying', next_retry_at = NOW(), updated_at = NOW(),
                 error_message = 'El worker se reinició durante la ejecución anterior'
             WHERE status = 'running'
-              AND updated_at < NOW() - INTERVAL '30 minutes'
-            """
+              AND updated_at < NOW() - (
+                  CASE WHEN current_step='documents' THEN %s ELSE 1800 END
+                  * INTERVAL '1 second'
+              )
+            """,
+            (get_settings().analysis_documents_timeout_seconds + 60,),
         )
         return cursor.rowcount
 
@@ -632,13 +636,30 @@ def _process_documents(settings: Settings, job: dict[str, Any]) -> dict[str, Any
     from app.document_scale import verify_company_scales
 
     with connect() as connection:
-        scale_result = verify_company_scales(connection, job, settings)
-        if scale_result["verified"]:
-            calculate_and_store_metrics(
-                connection, job["smv_rpj"], job["fiscal_year"],
-                job["period_code"], job["scope"],
-            )
+        def report(progress, message):
+            logger.info("Análisis %s · %s: %s", job["id"], progress, message)
+            with connect() as progress_connection:
+                progress_connection.execute(
+                    "UPDATE analysis_jobs SET progress=%s, updated_at=NOW() "
+                    "WHERE id=%s AND status='running'", (progress, job["id"]),
+                )
+                progress_connection.execute(
+                    "UPDATE analysis_job_steps SET details=%s::jsonb, updated_at=NOW() "
+                    "WHERE job_id=%s AND step_code='documents' AND status='running'",
+                    (json.dumps({"activity": message}), job["id"]),
+                )
+                progress_connection.commit()
+
+        scale_result = verify_company_scales(connection, job, settings, report=report)
+        # Also reconcile evidence committed by a previous interrupted attempt.
+        calculate_and_store_metrics(
+            connection, job["smv_rpj"], job["fiscal_year"],
+            job["period_code"], job["scope"],
+        )
         connection.commit()
+    if scale_result.get("documents"):
+        return {"available": True, "documents": scale_result["documents"],
+                "scale_verification": scale_result}
     with connect() as connection, connection.cursor() as cursor:
         cursor.execute(
             """
@@ -817,7 +838,14 @@ def process_next_analysis_job(settings: Settings) -> dict[str, Any] | None:
             if document_status not in ("completed", "skipped"):
                 _start_step(connection, job["id"], "documents", 70)
                 connection.commit()
-                details = _process_documents(settings, job)
+                from app.bounded_task import run_bounded
+
+                logger.info("Análisis %s: iniciando proceso documental (límite %ss)",
+                            job["id"], settings.analysis_documents_timeout_seconds)
+                details = run_bounded(
+                    _process_documents, (settings, job),
+                    settings.analysis_documents_timeout_seconds,
+                )
                 documents_available = bool(details["available"])
                 _finish_step(
                     connection,

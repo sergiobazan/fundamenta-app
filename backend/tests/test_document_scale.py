@@ -44,8 +44,12 @@ def test_discovered_notes_do_not_require_verified_scales(monkeypatch, identity_o
                period_code="A", scope="consolidated")
     url = "https://www.smv.gob.pe/report.pdf"
     registered = []
-    monkeypatch.setattr("app.smv_documents.discover_smv_documents", lambda *args: [url])
-    monkeypatch.setattr(module, "fetch_official", lambda *args: b"%PDF-test")
+    monkeypatch.setattr("app.smv_documents.discover_smv_documents", lambda *args: [url, url + "?2"])
+    fetched = []
+    def fetch(*args):
+        fetched.append(args[0])
+        return b"%PDF-test"
+    monkeypatch.setattr(module, "fetch_official", fetch)
     monkeypatch.setattr(module, "read_pages", lambda *args: ["document"])
     monkeypatch.setattr(module, "document_identity", lambda *args: identity_ok)
     monkeypatch.setattr("app.notes_scale.verify_notes_policy", lambda *args: {})
@@ -54,6 +58,8 @@ def test_discovered_notes_do_not_require_verified_scales(monkeypatch, identity_o
                         lambda *args: SimpleNamespace(notes=["note"]))
     monkeypatch.setattr("app.notes_jobs.register_note_sources",
                         lambda conn, sources: registered.extend(sources))
+    monkeypatch.setattr("app.notes.store_note_document",
+                        lambda *args, **kwargs: {"status": "imported"})
     result = module.verify_company_scales(
         connection, job, SimpleNamespace(notes_max_pdf_bytes=1000)
     )
@@ -61,6 +67,8 @@ def test_discovered_notes_do_not_require_verified_scales(monkeypatch, identity_o
     assert result["pending"] == 1
     assert bool(registered) == identity_ok
     assert bool(result["documents"]) == identity_ok
+    if identity_ok:
+        assert fetched == [url]  # Notes publish even while every scale is unknown.
 
 
 @pytest.mark.parametrize(

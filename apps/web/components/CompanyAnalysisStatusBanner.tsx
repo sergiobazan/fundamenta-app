@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { pollAnalysis } from "@/lib/analysis-polling";
 import type { AnalysisStepCode, Company, CompanyAnalysis } from "@/lib/types";
 
 const stepNames: Record<AnalysisStepCode | "complete", string> = {
@@ -15,19 +16,16 @@ const stepNames: Record<AnalysisStepCode | "complete", string> = {
 export function CompanyAnalysisStatusBanner({ initial }: { initial: Company }) {
   const router = useRouter();
   const [company, setCompany] = useState(initial);
+  const [activity, setActivity] = useState("");
   const active = Boolean(
     company.job_status && ["queued", "running", "retrying"].includes(company.job_status),
   );
 
   useEffect(() => {
     if (!active) return;
-    const timer = window.setInterval(async () => {
-      const response = await fetch(
-        `/api/companies/${encodeURIComponent(company.smv_rpj)}/analysis`,
-        { cache: "no-store" },
-      );
-      if (!response.ok) return;
-      const analysis = await response.json() as CompanyAnalysis;
+    return pollAnalysis(company.smv_rpj, (analysis: CompanyAnalysis) => {
+      const details = analysis.job?.steps.find(step => step.step_code === "documents")?.details;
+      setActivity(typeof details?.activity === "string" ? details.activity.split(": https://")[0] : "");
       setCompany((current) => ({
         ...current,
         ...analysis.company,
@@ -39,8 +37,7 @@ export function CompanyAnalysisStatusBanner({ initial }: { initial: Company }) {
       if (!analysis.job || !["queued", "running", "retrying"].includes(analysis.job.status)) {
         router.refresh();
       }
-    }, 2500);
-    return () => window.clearInterval(timer);
+    });
   }, [active, company.smv_rpj, router]);
 
   const title = active
@@ -49,7 +46,7 @@ export function CompanyAnalysisStatusBanner({ initial }: { initial: Company }) {
       ? "Análisis pendiente de revisión"
       : "Análisis parcial";
   const detail = active
-    ? `Procesando ${company.job_current_step ? stepNames[company.job_current_step] : "la solicitud"}. Ya puedes consultar los estados y métricas disponibles.`
+    ? `${activity || `Procesando ${company.job_current_step ? stepNames[company.job_current_step] : "la solicitud"}`}. Ya puedes consultar los estados y métricas disponibles.`
     : company.last_error || "Algunas etapas documentales continúan pendientes.";
 
   return <section className="coverage-note analysis-live-status"><span>{active ? "↻" : "!"}</span><div><b>{title}</b><p>{detail}</p></div></section>;

@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,6 +29,7 @@ class Settings(BaseSettings):
     analysis_worker_enabled: bool = True
     analysis_worker_poll_seconds: float = 5
     analysis_worker_max_attempts: int = 3
+    analysis_documents_timeout_seconds: float = Field(default=180, gt=0, le=900)
     analysis_active_jobs_per_user: int = 3
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

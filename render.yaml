@@ -30,6 +30,8 @@ services:
         value: "2025"
       - key: ANALYSIS_WORKER_ENABLED
         value: "true"
+      - key: ANALYSIS_DOCUMENTS_TIMEOUT_SECONDS
+        value: "180"
       - key: ANALYSIS_ACTIVE_JOBS_PER_USER
         value: "3"
 

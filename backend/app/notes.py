@@ -413,6 +413,7 @@ def store_note_document(
     *,
     source: dict[str, Any],
     pdf_bytes: bytes,
+    extraction: ExtractionResult | None = None,
 ) -> dict[str, Any]:
     digest = hashlib.sha256(pdf_bytes).hexdigest()
     with connection.cursor() as cursor:
@@ -439,7 +440,7 @@ def store_note_document(
             }
 
     identity_tokens = tuple(source["identity_tokens"])
-    extraction = extract_notes_from_pdf(pdf_bytes, identity_tokens)
+    extraction = extraction or extract_notes_from_pdf(pdf_bytes, identity_tokens)
 
     with connection.cursor() as cursor:
         # Serializa la creación de versiones por fuente sin bloquear una consulta agregada.

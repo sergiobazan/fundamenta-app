@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import type { AnalysisStepCode, CompanyAnalysis } from "@/lib/types";
 import { AnalysisReadingCards } from "./AnalysisReadingCards";
+import { pollAnalysis } from "@/lib/analysis-polling";
 
 const stepNames: Record<AnalysisStepCode, string> = {
   statements: "Estados financieros",
@@ -25,19 +26,12 @@ export function CompanyAnalysisProgress({ initial }: { initial: CompanyAnalysis 
 
   useEffect(() => {
     if (!active) return;
-    const timer = window.setInterval(async () => {
-      const response = await fetch(
-        `/api/companies/${encodeURIComponent(analysis.company.smv_rpj)}/analysis`,
-        { cache: "no-store" },
-      );
-      if (!response.ok) return;
-      const next = await response.json() as CompanyAnalysis;
+    return pollAnalysis(analysis.company.smv_rpj, (next: CompanyAnalysis) => {
       setAnalysis(next);
       if (next.company.has_analysis && next.job && !activeStatuses.has(next.job.status)) {
         router.refresh();
       }
-    }, 2500);
-    return () => window.clearInterval(timer);
+    });
   }, [active, analysis.company.smv_rpj, router]);
 
   function requestAnalysis() {

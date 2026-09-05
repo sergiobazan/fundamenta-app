@@ -12,6 +12,7 @@ import json
 import re
 from decimal import Decimal
 from html.parser import HTMLParser
+from itertools import islice
 from urllib.parse import urljoin, urlparse
 
 import httpx
@@ -244,7 +245,8 @@ def apply_evidence(
     return True
 
 
-def verify_company_scales(connection, job: dict, settings) -> dict:
+def verify_company_scales(connection, job: dict, settings, report=None) -> dict:
+    report = report or (lambda progress, message: None)
     with connection.cursor() as cursor:
         cursor.execute("SELECT legal_name FROM companies WHERE id=%s", (job["company_id"],))
         name = cursor.fetchone()["legal_name"]
@@ -279,24 +281,38 @@ def verify_company_scales(connection, job: dict, settings) -> dict:
     from app.smv_documents import discover_smv_documents
 
     try:
+        report(71, "Buscando documentos oficiales en la SMV")
         urls = discover_smv_documents(name, job["fiscal_year"], job["scope"]) + urls
     except (httpx.HTTPError, ValueError) as error:
         errors.append(f"Descubrimiento SMV: {str(error)[:220]}")
-    for origin in origins:
-        try:
-            urls.extend(discover_pdfs(origin["page_url"], hosts, job["fiscal_year"], 20))
-        except (httpx.HTTPError, ValueError) as error:
-            errors.append(str(error)[:250])
+    def candidates():
+        seen = set()
+        for url in urls:
+            if url not in seen:
+                seen.add(url)
+                yield url
+        # Corporate fallback is consulted only after SMV candidates failed.
+        for origin in origins:
+            try:
+                for url in discover_pdfs(origin["page_url"], hosts, job["fiscal_year"], 20):
+                    if url not in seen:
+                        seen.add(url)
+                        yield url
+            except (httpx.HTTPError, ValueError) as error:
+                errors.append(str(error)[:250])
     verified = 0
     documents = []
-    for url in list(dict.fromkeys(urls))[:16]:
+    for index, url in enumerate(islice(candidates(), 16)):
         try:
+            report(72 + min(index, 8), f"Descargando documento oficial: {url}")
             data = fetch_official(url, hosts, settings.notes_max_pdf_bytes, 30)
+            report(72 + min(index, 8), f"Leyendo PDF y comprobando identidad: {url}")
             pages = read_pages(data)
             if not document_identity(pages, name, job["fiscal_year"], job["scope"]):
                 continue
             from app.notes_scale import verify_notes_policy
 
+            report(72 + min(index, 8), f"Contrastando evidencia de escala: {url}")
             notes_evidence = verify_notes_policy(pages, filings, facts_by_id)
             for filing in filings:
                 facts = facts_by_id[filing["id"]]
@@ -314,6 +330,7 @@ def verify_company_scales(connection, job: dict, settings) -> dict:
             # extraction is independent of monetary-scale evidence. Keep the
             # first valid source (SMV first), even if later PDFs verify scales.
             if not documents:
+                report(72 + min(index, 8), f"Extrayendo notas: {url}")
                 tokens = (name, str(job["fiscal_year"]), "Notas a los estados financieros")
                 try:
                     extraction = extract_notes_from_pdf(data, tokens)
@@ -334,9 +351,19 @@ def verify_company_scales(connection, job: dict, settings) -> dict:
                         identity_tokens=tokens,
                     )
                     register_note_sources(connection, (source,))
-                    documents.append({"url": url, "notes": len(extraction.notes)})
+                    from app.notes import store_note_document
+
+                    with connection.cursor() as cursor:
+                        cursor.execute("SELECT * FROM note_sources WHERE source_key=%s",
+                                       (source.source_key,))
+                        registered = cursor.fetchone()
+                    report(83, "Guardando notas verificadas y sus referencias")
+                    stored = store_note_document(
+                        connection, source=registered, pdf_bytes=data, extraction=extraction,
+                    )
+                    documents.append({"url": url, "notes": len(extraction.notes), **stored})
             connection.commit()
-            if verified == pending and documents:
+            if documents:
                 break
         except (httpx.HTTPError, ValueError, PdfReadError) as error:
             errors.append(str(error)[:250])

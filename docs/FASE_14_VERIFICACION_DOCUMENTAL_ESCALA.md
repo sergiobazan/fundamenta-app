@@ -1,5 +1,30 @@
 # Fase 14: verificación documental de escala
 
+## Protección contra estancamientos en producción
+
+La etapa documental se ejecuta en un proceso separado con límite real de duración
+(`ANALYSIS_DOCUMENTS_TIMEOUT_SECONDS`, 180 segundos por intento). El límite cubre
+descargas, extracción PDF y escrituras; al vencer se termina el proceso hijo y el
+trabajo pasa al mecanismo de reintentos existente (máximo configurado: tres).
+Un fallo del hijo también se comunica al proceso principal. La recuperación de una
+etapa documental abandonada utiliza el límite más 60 segundos sin actualización.
+
+El primer PDF oficial con identidad y notas válidas se guarda y publica sin esperar
+resolver las escalas restantes. No se descarga de nuevo el mismo PDF para importarlo.
+Las fuentes corporativas se recorren sólo si no bastaron los candidatos SMV y fuentes
+registradas. Las escalas pendientes conservan su advertencia; no se verifican por
+haber publicado notas. Esta ruta rápida prioriza notas del año solicitado; no inicia
+una búsqueda histórica adicional para comparar notas con el año anterior.
+
+El trabajo registra actividad (búsqueda, descarga, lectura, contraste, extracción y
+guardado) y progreso en la base y en logs. El cliente evita solicitudes superpuestas,
+espacia consultas sin cambios hasta 15 segundos, pausa en pestañas ocultas y cancela
+al abandonar la pantalla. No se sustituyen resultados pendientes por progreso ficticio.
+
+Despliegue: actualizar backend y frontend. El trabajo documental antiguo de producción
+podrá recuperarse automáticamente si ha superado el umbral de inactividad. Estas
+modificaciones no reinician ni reencolan producción desde el entorno local.
+
 El flujo bajo demanda intenta verificar la escala de cada estado anual después de
 publicar las métricas iniciales. Conserva `Escala no verificada` cuando no hay prueba
 suficiente. No deriva la escala de otras empresas, estados o periodos.
