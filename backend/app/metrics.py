@@ -50,6 +50,28 @@ class MetricResult:
     inputs: dict[str, Any]
 
 
+def comparative_metric(metric: dict) -> dict:
+    """Recompute with comparative inputs, never substitute closing for average balances."""
+    facts = {
+        concept: FinancialFact(
+            concept=concept, current=Decimal(str(item["comparative"])), comparative=None,
+            currency_code=item["currency_code"], scale=item["scale"],
+            filing_id=item["filing_id"],
+        )
+        for concept, item in metric["inputs"].items()
+        if item.get("comparative") is not None
+    }
+    result = next(item for item in compute_metrics(facts) if item.code == metric["metric_code"])
+    reason = result.reason
+    if metric["metric_code"] in {"revenue_growth", "return_on_assets", "return_on_equity"}:
+        reason = "Se necesitan datos de un ejercicio adicional para calcular el año anterior"
+    return {
+        "status": result.status, "value": result.value,
+        "currency_code": result.currency_code, "value_scale": result.scale,
+        "reason": reason, "inputs": result.inputs,
+    }
+
+
 def compute_metrics(facts: dict[str, FinancialFact]) -> list[MetricResult]:
     revenue = facts.get("revenue")
     current_assets = facts.get("current_assets")
@@ -295,7 +317,10 @@ def _monetary_linear(
         value,
         facts,
         currency_code=first.currency_code,
-        scale=first.scale,
+        # Keep the raw reported magnitude when SMV does not provide a verified
+        # scale. A NULL value_scale is surfaced as an explicit UI warning and
+        # must never be interpreted as units, thousands, or millions.
+        scale=None if first.scale == "unknown" else first.scale,
     )
 
 

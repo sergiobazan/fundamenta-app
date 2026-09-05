@@ -15,7 +15,7 @@ export default async function EventsPage({
   searchParams: Promise<{ company?: string; category?: string }>;
 }) {
   const requested = await searchParams;
-  const companies = await getCompanies();
+  const companies = (await getCompanies()).filter((candidate) => candidate.has_analysis);
   const company = companies.some((candidate) => candidate.smv_rpj === requested.company)
     ? requested.company
     : undefined;

@@ -45,8 +45,14 @@ export default async function ComparatorPage({
   const requested = await searchParams;
   const companies = await getCompanies();
   const loaded = (await Promise.all(companies.map(async (company) => {
+    if (!company.has_analysis || !company.latest_fiscal_year || !company.preferred_scope) {
+      return null;
+    }
     try {
-      const [summary, filings] = await Promise.all([getSummary(company.smv_rpj), getFilings(company.smv_rpj)]);
+      const [summary, filings] = await Promise.all([
+        getSummary(company.smv_rpj, company.latest_fiscal_year, company.preferred_scope),
+        getFilings(company.smv_rpj),
+      ]);
       return { summary, filings };
     } catch {
       return null;
@@ -75,6 +81,7 @@ export default async function ComparatorPage({
     left.summary.period.period_code === right.summary.period.period_code &&
     left.summary.period.scope === right.summary.period.scope &&
     leftFiling.currency_code === rightFiling.currency_code &&
+    leftFiling.reported_scale !== "unknown" &&
     leftFiling.reported_scale === rightFiling.reported_scale &&
     formulasMatch
   );
@@ -91,7 +98,7 @@ export default async function ComparatorPage({
     </form>
 
     <section className={`compatibility-banner ${compatible ? "compatible" : "incompatible"}`}>
-      <span>{compatible ? "✓" : "!"}</span><div><b>{compatible ? "Datos comparables" : "Comparación bloqueada"}</b><p>{compatible ? `${left.summary.period.year} · Anual · Consolidado · ${leftFiling?.currency_code} en ${leftFiling?.reported_scale === "thousands" ? "miles" : leftFiling?.reported_scale} · Fórmula v${left.summary.metrics[0]?.formula_version}` : "El periodo, alcance, moneda, escala o versión de fórmula no coincide. No se muestran diferencias potencialmente engañosas."}</p></div>
+      <span>{compatible ? "✓" : "!"}</span><div><b>{compatible ? "Datos comparables" : "Comparación bloqueada"}</b><p>{compatible ? `${left.summary.period.year} · Anual · ${left.summary.period.scope === "consolidated" ? "Consolidado" : "Individual"} · ${leftFiling?.currency_code} en ${leftFiling?.reported_scale === "thousands" ? "miles" : leftFiling?.reported_scale} · Fórmula v${left.summary.metrics[0]?.formula_version}` : "El periodo, alcance, moneda, escala o versión de fórmula no coincide. No se muestran diferencias potencialmente engañosas."}</p></div>
     </section>
 
     {compatible && <section className="comparison-table-wrap">

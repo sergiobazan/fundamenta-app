@@ -1,6 +1,29 @@
 from decimal import Decimal
 
-from app.metrics import FinancialFact, compute_metrics
+from app.metrics import FinancialFact, comparative_metric, compute_metrics
+
+
+def test_comparative_metrics_use_previous_inputs_without_inventing_third_year():
+    results = compute_metrics(buenaventura_facts())
+    previous = {r.code: comparative_metric({"metric_code": r.code, "inputs": r.inputs})
+                for r in results}
+    assert previous["working_capital"]["value"] == Decimal("358624")
+    assert previous["free_cash_flow"]["value"] == Decimal("148316")
+    for code in ("revenue_growth", "return_on_assets", "return_on_equity"):
+        assert previous[code]["status"] == "not_available"
+        assert previous[code]["value"] is None
+
+
+def test_comparative_preserves_unknown_scale_and_missing_inputs():
+    facts = {"current_assets": fact("current_assets", "10", "8", scale="unknown"),
+             "current_liabilities": fact("current_liabilities", "5", "3", scale="unknown")}
+    current = next(r for r in compute_metrics(facts) if r.code == "working_capital")
+    previous = comparative_metric({"metric_code": current.code, "inputs": current.inputs})
+    assert previous["value"] == Decimal("5")
+    assert previous["value_scale"] is None
+    current.inputs["current_assets"]["comparative"] = None
+    result = comparative_metric({"metric_code": current.code, "inputs": current.inputs})
+    assert result["value"] is None
 
 
 def fact(
@@ -73,3 +96,48 @@ def test_incompatible_scale_blocks_free_cash_flow() -> None:
 
     assert result.status == "not_available"
     assert result.reason == "Las unidades o monedas de los insumos no coinciden"
+
+
+def test_unknown_scale_keeps_raw_monetary_values_without_inventing_a_scale() -> None:
+    facts = {
+        concept: fact(
+            value.concept,
+            str(value.current),
+            str(value.comparative) if value.comparative is not None else None,
+            scale="unknown",
+        )
+        for concept, value in buenaventura_facts().items()
+    }
+
+    metrics = {metric.code: metric for metric in compute_metrics(facts)}
+
+    assert metrics["current_ratio"].status == "computed"
+    assert metrics["working_capital"].status == "computed"
+    assert metrics["working_capital"].value == Decimal("580526")
+    assert metrics["working_capital"].currency_code == "USD"
+    assert metrics["working_capital"].scale is None
+    assert metrics["working_capital"].reason is None
+    assert metrics["free_cash_flow"].status == "computed"
+    assert metrics["free_cash_flow"].value == Decimal("104312")
+    assert metrics["free_cash_flow"].scale is None
+
+
+def test_alicorp_free_cash_flow_keeps_smv_reported_magnitude() -> None:
+    facts = {
+        "operating_cash_flow": fact(
+            "operating_cash_flow", "1644365", currency="PEN", scale="unknown"
+        ),
+        "purchases_property_plant_equipment": fact(
+            "purchases_property_plant_equipment",
+            "-168693",
+            currency="PEN",
+            scale="unknown",
+        ),
+    }
+
+    result = next(item for item in compute_metrics(facts) if item.code == "free_cash_flow")
+
+    assert result.status == "computed"
+    assert result.value == Decimal("1475672")
+    assert result.currency_code == "PEN"
+    assert result.scale is None

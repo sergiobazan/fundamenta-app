@@ -15,7 +15,13 @@ export default async function NotesPage({
   searchParams,
 }: {
   params: Promise<{ smvRpj: string }>;
-  searchParams: Promise<{ q?: string; topic?: string; priority?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    topic?: string;
+    priority?: string;
+    year?: string;
+    scope?: string;
+  }>;
 }) {
   const { smvRpj } = await params;
   const requested = await searchParams;
@@ -24,9 +30,15 @@ export default async function NotesPage({
     : undefined;
   const priorityOnly = requested.priority === "1";
   const query = requested.q?.trim().slice(0, 100) || undefined;
+  const parsedYear = Number(requested.year);
+  const year = Number.isInteger(parsedYear) && parsedYear >= 2000 && parsedYear <= 2100
+    ? parsedYear
+    : 2025;
+  const scope = requested.scope === "individual" ? "individual" : "consolidated";
+  const coverageQuery = `year=${year}&scope=${scope}`;
   let data;
   try {
-    data = await getNotes(smvRpj, { topic, priorityOnly, query });
+    data = await getNotes(smvRpj, { year, scope, topic, priorityOnly, query });
   } catch {
     notFound();
   }
@@ -44,19 +56,21 @@ export default async function NotesPage({
 
     <section className="note-source-bar">
       <div><span>✓</span><p><b>{data.document.document_name}</b><small>{data.document.page_count} páginas · versión {data.document.version} · extracción referenciada</small></p></div>
-      <div className="note-source-actions"><Link href={`/empresas/${smvRpj}/notas/comparar`}>Comparar 2025 vs. 2024 →</Link><a href={data.document.source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a></div>
+      <div className="note-source-actions"><Link href={`/empresas/${smvRpj}/notas/comparar?currentYear=${year}&scope=${scope}`}>Comparar notas {year} vs. {year - 1} →</Link><a href={data.document.source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a></div>
     </section>
 
     <form className="notes-filters" action={`/empresas/${smvRpj}/notas`} method="get">
+      <input type="hidden" name="year" value={year} />
+      <input type="hidden" name="scope" value={scope} />
       <label className="note-search"><span>⌕</span><input name="q" defaultValue={query ?? ""} placeholder="Buscar título o contenido…" /></label>
       <label><span>Tema</span><select name="topic" defaultValue={topic ?? ""}><option value="">Todos los temas</option>{topics.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
       <label className="priority-filter"><input type="checkbox" name="priority" value="1" defaultChecked={priorityOnly} /><span>Sólo relevantes para análisis</span></label>
       <button type="submit">Aplicar</button>
-      {(query || topic || priorityOnly) && <Link href={`/empresas/${smvRpj}/notas`}>Limpiar</Link>}
+      {(query || topic || priorityOnly) && <Link href={`/empresas/${smvRpj}/notas?${coverageQuery}`}>Limpiar</Link>}
     </form>
 
     {data.notes.length ? <div className="notes-grid">{data.notes.map((note) =>
-      <Link className="note-card" href={`/empresas/${smvRpj}/notas/${note.note_number}`} key={note.id}>
+      <Link className="note-card" href={`/empresas/${smvRpj}/notas/${note.note_number}?year=${year}&period=A&scope=${scope}`} key={note.id}>
         <div className="note-card-top"><b>Nota {note.note_number}</b><span className={note.is_priority ? "priority" : ""}>{noteTopicNames[note.topic]}</span></div>
         <h2>{note.original_title}</h2>
         <p>{note.excerpt}{note.excerpt.length >= 320 ? "…" : ""}</p>

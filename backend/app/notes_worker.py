@@ -6,6 +6,7 @@ import signal
 import time
 from datetime import UTC, datetime
 
+from app.company_analysis import process_next_analysis_job, recover_stale_analysis_jobs
 from app.config import get_notes_sources_path, get_settings
 from app.db import connect
 from app.notes import load_note_sources
@@ -35,6 +36,7 @@ def initialize() -> int:
     with connect() as connection:
         register_note_sources(connection, sources)
         recovered = recover_stale_jobs(connection)
+        recovered_analyses = recover_stale_analysis_jobs(connection)
         queued = 0
         if settings.notes_sync_on_start:
             queued = enqueue_monthly_jobs(
@@ -44,7 +46,13 @@ def initialize() -> int:
                 max_attempts=settings.notes_worker_max_attempts,
             )
         connection.commit()
-    logger.info("Fuentes=%s, recuperados=%s, encolados=%s", len(sources), recovered, queued)
+    logger.info(
+        "Fuentes=%s, notas recuperadas=%s, análisis recuperados=%s, encolados=%s",
+        len(sources),
+        recovered,
+        recovered_analyses,
+        queued,
+    )
     return queued
 
 
@@ -85,6 +93,10 @@ def run(*, once: bool = False) -> None:
     while running:
         enqueue_if_due(datetime.now(UTC))
         try:
+            analysis = process_next_analysis_job(settings)
+            if analysis:
+                logger.info("Análisis procesado: %s", analysis)
+                continue
             result = process_next_job(settings)
             if result:
                 logger.info("Notas sincronizadas: %s", result)

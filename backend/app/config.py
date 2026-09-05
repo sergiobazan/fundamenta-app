@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     migrations_dir: str = "infra/postgres/init"
     bootstrap_events_file: str = "backend/data/events/official_events_2026.json"
     bootstrap_on_start: bool = True
+    company_catalog_sync_on_start: bool = True
+    company_analysis_fiscal_year: int = 2025
+    analysis_worker_enabled: bool = True
+    analysis_worker_poll_seconds: float = 5
+    analysis_worker_max_attempts: int = 3
+    analysis_active_jobs_per_user: int = 3
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

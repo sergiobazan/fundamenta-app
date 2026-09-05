@@ -21,7 +21,7 @@ MALFORMED_NOTE_HEADING_RE = re.compile(
     r"(?m)^[ \t]*\.[ \t]+(Juicios, estimados y supuestos contables significativos)[ \t]*$",
     re.IGNORECASE,
 )
-NOTES_MARKER = "notas a los estados financieros consolidados"
+NOTES_MARKER = "notas a los estados financieros"
 APPENDIX_HEADING_RE = re.compile(
     r"(?im)^[ \t]*(?:informaci[oó]n suplementaria|recursos minerales y reservas "
     r"probadas y probables)\b"
@@ -204,10 +204,19 @@ def _plausible_title(value: str, *, dotted_heading: bool = True) -> bool:
     # Algunos informes auditados (por ejemplo, Volcan) omiten el punto después
     # del número de nota. En ese formato los títulos son versales. Exigirlas
     # evita interpretar fechas como "31 de diciembre..." como una nota.
-    if not dotted_heading and value != value.upper():
+    if not dotted_heading and value != value.upper() and not _normalized(value).startswith(
+        "jerarquia y valor razonable de los instrumentos financieros"
+    ):
         return False
     last_word = value.rstrip(". ").split()[-1].lower()
     return last_word not in TRAILING_STOP_WORDS
+
+
+def _is_notes_index(text: str) -> bool:
+    # A table of contents lists titles plus page numbers, not note bodies.
+    entries = list(NOTE_HEADING_RE.finditer(text))
+    page_references = sum(bool(re.search(r"\s\d+\s*$", m.group(3))) for m in entries)
+    return len(entries) >= 3 and page_references == len(entries)
 
 
 def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
@@ -216,16 +225,19 @@ def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
             index
             for index, text in enumerate(page_texts)
             if NOTES_MARKER in _normalized(text)
+            and not _is_notes_index(text)
             and re.search(r"(?m)^\s*1(?:\.|\s)\s*", text)
         ),
         None,
     )
     if start_page is None:
-        raise ValueError("No se encontró el inicio de las notas consolidadas")
+        raise ValueError("No se encontró el inicio de las notas a los estados financieros")
 
     headings: list[_Heading] = []
     expected_number = 1
     for page_index in range(start_page, len(page_texts)):
+        if _is_notes_index(page_texts[page_index]):
+            continue
         candidates = [
             (
                 match.start(),
@@ -270,6 +282,18 @@ def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
         raise ValueError(
             f"Sólo se detectaron {len(headings)} notas; el documento requiere revisión"
         )
+    # Do not silently absorb later numbered notes into the last accepted note.
+    for text in page_texts[start_page:]:
+        if _is_notes_index(text):
+            continue
+        if APPENDIX_HEADING_RE.search(text):
+            break
+        for match in NOTE_HEADING_RE.finditer(text):
+            if (
+                int(match.group(1)) > headings[-1].note_number
+                and _plausible_title(match.group(3), dotted_heading=match.group(2) is not None)
+            ):
+                raise ValueError("La secuencia de notas está incompleta; requiere revisión")
     return tuple(headings)
 
 

@@ -1,13 +1,24 @@
 import os
 from contextlib import asynccontextmanager
+from threading import Event, Thread
 from typing import Annotated, Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response, status
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
+from app.auth import current_user_dependency
 from app.auth import router as auth_router
 from app.cited_summaries import fetch_cited_summary
-from app.config import get_upload_dir
+from app.company_analysis import (
+    AnalysisNotSupportedError,
+    AnalysisQuotaError,
+    get_catalog_company,
+    get_company_analysis,
+    list_catalog_companies,
+    request_company_analysis,
+)
+from app.config import get_settings, get_upload_dir
 from app.db import connect
 from app.document_search import search_source_fragments
 from app.narrative_comparisons import fetch_narrative_comparison
@@ -26,6 +37,11 @@ NoteTopic = Literal[
 ]
 
 
+class CompanyAnalysisRequest(BaseModel):
+    fiscal_year: int | None = Field(default=None, ge=2000, le=2100)
+    scope: Literal["individual", "consolidated"] | None = None
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     # `app.runtime` prepara producción antes de ejecutar Uvicorn. Este respaldo hace
@@ -34,10 +50,29 @@ async def lifespan(_app: FastAPI):
         from app.runtime import prepare_database
 
         prepare_database("api")
-    yield
+    from app.company_analysis import run_analysis_worker
+    from app.config import get_settings
+
+    settings = get_settings()
+    stop_event = Event()
+    worker = None
+    if settings.analysis_worker_enabled:
+        worker = Thread(
+            target=run_analysis_worker,
+            args=(stop_event, settings),
+            name="company-analysis-worker",
+            daemon=True,
+        )
+        worker.start()
+    try:
+        yield
+    finally:
+        stop_event.set()
+        if worker is not None:
+            worker.join(timeout=min(settings.analysis_worker_poll_seconds + 1, 10))
 
 
-app = FastAPI(title="Fundamenta API", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="Fundamenta API", version="0.3.0", lifespan=lifespan)
 app.include_router(auth_router)
 
 upload_dir = get_upload_dir()
@@ -55,15 +90,60 @@ def health() -> dict[str, str]:
 
 @app.get("/companies")
 def companies() -> list[dict]:
-    with connect() as connection, connection.cursor() as cursor:
-        cursor.execute(
-            """
-            SELECT smv_rpj, ruc, legal_name, company_type, sector, ciiu, updated_at
-            FROM companies
-            ORDER BY legal_name
-            """
-        )
-        return list(cursor.fetchall())
+    with connect() as connection:
+        return list_catalog_companies(connection)
+
+
+@app.get("/companies/{smv_rpj}")
+def company_detail(smv_rpj: str) -> dict:
+    with connect() as connection:
+        company = get_catalog_company(connection, smv_rpj)
+    if company is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return company
+
+
+@app.get("/companies/{smv_rpj}/analysis")
+def company_analysis_status(smv_rpj: str) -> dict:
+    with connect() as connection:
+        analysis = get_company_analysis(connection, smv_rpj)
+    if analysis is None:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return analysis
+
+
+@app.post("/companies/{smv_rpj}/analysis")
+def create_company_analysis(
+    smv_rpj: str,
+    payload: CompanyAnalysisRequest,
+    response: Response,
+    user: dict = current_user_dependency,
+) -> dict:
+    settings = get_settings()
+    try:
+        with connect() as connection:
+            analysis, deduplicated = request_company_analysis(
+                connection,
+                smv_rpj=smv_rpj,
+                user_id=user["id"],
+                fiscal_year=payload.fiscal_year or settings.company_analysis_fiscal_year,
+                scope=payload.scope,
+                max_attempts=settings.analysis_worker_max_attempts,
+                active_jobs_per_user=settings.analysis_active_jobs_per_user,
+            )
+            connection.commit()
+    except AnalysisNotSupportedError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error)) from error
+    except AnalysisQuotaError as error:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(error)
+        ) from error
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(error)
+        ) from error
+    response.status_code = status.HTTP_200_OK if deduplicated else status.HTTP_202_ACCEPTED
+    return {**analysis, "deduplicated": deduplicated}
 
 
 @app.get("/events")
@@ -445,6 +525,10 @@ def financial_summary(
         if not metrics:
             raise HTTPException(status_code=404, detail="Financial metrics not found")
 
+    from app.metrics import comparative_metric
+
+    for metric in metrics:
+        metric["comparative"] = comparative_metric(metric)
     return {
         "company": company,
         "period": {"year": year, "period_code": period, "scope": scope},

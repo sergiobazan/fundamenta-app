@@ -1,20 +1,18 @@
-import { CompanyDirectory, type CompanyWithCoverage } from "@/components/CompanyDirectory";
-import { getCompanies, getFilings } from "@/lib/financial";
+import { CompanyDirectory } from "@/components/CompanyDirectory";
+import { getCompanies } from "@/lib/financial";
 
 export const metadata = { title: "Empresas" };
 
 export default async function CompaniesPage() {
   const landingUrl = process.env.NEXT_PUBLIC_LANDING_URL || "http://localhost:4321";
   const companies = await getCompanies();
-  const remainingCompanies = Math.max(8 - companies.length, 0);
-  const companiesWithCoverage: CompanyWithCoverage[] = await Promise.all(
-    companies.map(async (company) => ({ ...company, filings: await getFilings(company.smv_rpj) })),
-  );
+  const analyzed = companies.filter((company) => company.has_analysis).length;
+  const compatible = companies.filter((company) => company.support_level !== "unsupported").length;
 
   return <>
-    <header className="app-header directory-header"><div><span className="overline">UNIVERSO DEL MVP</span><h1>Empresas</h1><p>Información oficial disponible, estado de cobertura y última actualización.</p></div><div className="directory-count"><strong>{companies.length}</strong><span>de 8 empresas<br/>incorporadas</span></div></header>
-    <section className="coverage-note"><span>{String(companies.length).padStart(2, "0")}</span><div><b>Cobertura deliberadamente pequeña</b><p>Una empresa sólo aparece cuando sus datos han sido ingeridos, normalizados y validados. {remainingCompanies ? `Las ${remainingCompanies} restantes se incorporarán progresivamente.` : "El universo inicial ya está incorporado."}</p></div></section>
-    <section className="directory-section"><CompanyDirectory companies={companiesWithCoverage} /></section>
-    <footer className="data-footer"><span>Universo objetivo: ocho mineras no financieras supervisadas por la SMV.</span><a href={`${landingUrl}/como-funciona`}>Conocer el proceso de incorporación ↗</a></footer>
+    <header className="app-header directory-header"><div><span className="overline">CATÁLOGO SMV</span><h1>Empresas</h1><p>Busca un emisor y abre o genera su análisis con fuentes oficiales.</p></div><div className="directory-count"><strong>{analyzed}</strong><span>con análisis<br/>de {companies.length} catalogadas</span></div></header>
+    <section className="coverage-note"><span>↗</span><div><b>La cobertura crece con cada solicitud</b><p>{compatible} empresas tienen un formato compatible con el alcance actual. Los estados y métricas aparecen primero; las notas se publican sólo cuando verificamos su fuente.</p></div></section>
+    <section className="directory-section"><CompanyDirectory companies={companies} /></section>
+    <footer className="data-footer"><span>Minería tiene cobertura completa; otros emisores no financieros reciben métricas compatibles.</span><a href={`${landingUrl}/como-funciona`}>Conocer el proceso de incorporación ↗</a></footer>
   </>;
 }

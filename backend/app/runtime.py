@@ -28,6 +28,17 @@ def prepare_database(service: str) -> None:
             len(result["skipped"]),
         )
 
+    if settings.company_catalog_sync_on_start:
+        try:
+            from app.company_analysis import sync_company_catalog
+
+            catalog = sync_company_catalog(settings)
+            logger.info("Catálogo SMV sincronizado: %s", catalog)
+        except Exception:
+            logger.exception(
+                "No se pudo actualizar el catálogo SMV; se conservará el catálogo existente"
+            )
+
     if service == "api" and settings.notes_sync_in_api_on_start:
         try:
             from app.notes_worker import sync_available_jobs

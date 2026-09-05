@@ -32,7 +32,89 @@
 .metric-result>b{font:800 1rem var(--display);color:var(--green)}
 .metric-result>small{grid-column:1/-1;color:var(--muted);font-size:.52rem}
 .metric-unavailable{margin:0;color:#8a3d2c;font-size:.6rem}
+.metric-card.scale-unverified{border:2px solid var(--coral);box-shadow:0 0 0 3px #ff76571f}
+.metric-card.scale-unverified .metric-title i{color:#713823;background:#ffe0c5}
+.metric-scale-warning{margin:0;padding:.5rem .6rem;border-left:3px solid var(--coral);background:#fff4e8;color:#713823;font-size:.6rem;line-height:1.45}
 
 @media(max-width:720px){
   .metric-explanation{padding:.7rem}
 }
+
+/* Catálogo SMV y análisis progresivo bajo demanda. */
+.analysis-reading{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:2rem;max-width:880px;margin:0 0 2rem;padding:1.6rem;border:1px solid var(--line);border-radius:1rem;background:linear-gradient(120deg,#eaf1e9,var(--surface))}
+.analysis-reading-intro{display:flex;flex-direction:column;align-items:flex-start;padding-right:1.5rem;border-right:1px solid #cfdccf}
+.analysis-reading-intro .overline{font-size:.58rem;letter-spacing:.09em}
+.analysis-reading h2{margin:.65rem 0 .45rem;font:750 1.35rem/1.25 var(--display);letter-spacing:-.04em;text-wrap:balance}
+.analysis-reading-intro p{margin:0;color:var(--muted);font-size:.72rem}
+.analysis-reading-category{margin-top:auto;padding-top:1.5rem;color:var(--green);font-size:.59rem}
+.analysis-reading-content{min-width:0;display:flex;flex-direction:column}
+.analysis-reading-slide{min-height:205px}
+.analysis-reading-topic{color:var(--green);font-size:.57rem;font-weight:750;letter-spacing:.08em}
+.analysis-reading h3{margin:.65rem 0;font:750 1.15rem/1.35 var(--display);letter-spacing:-.03em;text-wrap:balance}
+.analysis-reading-slide>p{margin:0;color:var(--muted);font-size:.76rem;line-height:1.7}
+.analysis-reading-takeaway{display:flex;gap:.6rem;margin-top:1rem;color:var(--green);font-size:.67rem;font-weight:650}
+.analysis-reading-takeaway>span{font-size:1rem}
+.analysis-reading-controls{display:flex;align-items:center;gap:.4rem;margin-top:auto;padding-top:.85rem;border-top:1px solid #d8e0d5}
+.analysis-reading-count{font-size:.65rem;font-variant-numeric:tabular-nums;font-weight:700}.analysis-reading-count>span{color:var(--muted);font-weight:400}
+.analysis-reading-dots{display:flex;gap:.3rem;margin:0 auto 0 .5rem}.analysis-reading-dots>span{width:.3rem;height:.3rem;border-radius:50%;background:#c7d1c7}.analysis-reading-dots>span.active{background:var(--green)}
+.analysis-reading-controls button{display:grid;place-items:center;min-width:44px;min-height:44px;border:1px solid #cbd8ca;border-radius:.6rem;background:var(--surface);color:var(--green);font-weight:700}
+.analysis-reading-controls .analysis-reading-pause{border-color:transparent;background:transparent;padding:0 .6rem;font-size:.63rem;font-weight:500}
+.analysis-reading-controls button:hover{background:#ddebdc}.analysis-reading-controls button:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+@media(max-width:720px){.analysis-reading{grid-template-columns:1fr;gap:1.2rem;padding:1.2rem}.analysis-reading-intro{padding:0 0 1rem;border-right:0;border-bottom:1px solid #cfdccf}.analysis-reading-category{padding-top:.7rem}.analysis-reading-slide{min-height:245px}}
+.company-row{grid-template-columns:3rem minmax(260px,1.7fr) minmax(100px,.65fr) minmax(105px,.65fr) minmax(110px,.7fr) minmax(112px,auto)}
+.data-status.not_analyzed,.data-status.unsupported,.data-status.failed{color:var(--muted)}
+.data-status.not_analyzed i,.data-status.unsupported i,.data-status.failed i{background:#929993;box-shadow:0 0 0 3px #92999316}
+.data-status.queued,.data-status.processing{color:#356895}
+.data-status.queued i,.data-status.processing i{background:#4f86b5;box-shadow:0 0 0 3px #4f86b516}
+.data-status.review_required,.data-status.partial{color:#9b5e2a}
+.data-status.review_required i,.data-status.partial i{background:#d98442;box-shadow:0 0 0 3px #d9844216}
+.analysis-action-wrap{display:grid;gap:.25rem;justify-items:stretch}
+.analysis-action-wrap small{max-width:150px;color:#8a3d2c;font-size:.55rem;line-height:1.25}
+.analysis-action{display:inline-flex;align-items:center;justify-content:center;min-height:2.35rem;padding:.55rem .7rem;border:1px solid var(--line);border-radius:.55rem;background:white;color:var(--ink);font-size:.64rem;font-weight:750;text-align:center;white-space:nowrap}
+.analysis-action.ready,.analysis-action.request{border-color:var(--green);background:var(--green);color:white}
+.analysis-action.progress{border-color:#8caeca;color:#315e84;background:#edf5fb}
+.analysis-action.disabled{cursor:not-allowed;color:#858c87;background:#efeee9}
+.analysis-action.request:disabled{opacity:.65}
+.analysis-progress-header{padding-bottom:1.6rem;border-bottom:1px solid var(--line)}
+.analysis-progress-header h1{max-width:850px;margin:.35rem 0;font:760 clamp(2rem,5vw,3.8rem)/1.05 var(--display);letter-spacing:-.06em}
+.analysis-progress-header p{margin:0;color:var(--muted);font-size:.76rem}
+.analysis-progress-card{display:grid;gap:1.5rem;max-width:880px;margin:2rem 0;padding:clamp(1.2rem,3vw,2rem);border:1px solid var(--line);border-radius:1rem;background:var(--surface)}
+.analysis-progress-copy>span{color:var(--green);font-size:.68rem;font-weight:750;text-transform:uppercase;letter-spacing:.08em}
+.analysis-progress-copy h2{margin:.35rem 0;font:750 clamp(1.5rem,3vw,2.2rem) var(--display);letter-spacing:-.04em}
+.analysis-progress-copy p{max-width:680px;margin:0;color:var(--muted);font-size:.78rem}
+.analysis-progress-meter{display:grid;grid-template-columns:1fr auto;align-items:center;gap:.8rem}
+.analysis-progress-meter>div{height:.55rem;overflow:hidden;border-radius:1rem;background:#e7e6df}
+.analysis-progress-meter>div>span{display:block;height:100%;border-radius:inherit;background:var(--green);transition:width .3s ease}
+.analysis-progress-meter>b{min-width:2.5rem;font:750 .75rem var(--display);text-align:right}
+.analysis-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;margin:0;padding:0;list-style:none}
+.analysis-steps li{display:flex;align-items:center;gap:.55rem;min-height:4.2rem;padding:.65rem;border:1px solid var(--line);border-radius:.65rem;background:#f5f3ed}
+.analysis-steps li i{display:grid;flex:0 0 1.45rem;place-items:center;width:1.45rem;height:1.45rem;border-radius:50%;background:#d9d9d3;color:#69706b;font-size:.6rem;font-style:normal;font-weight:800}
+.analysis-steps li div{display:grid;min-width:0}
+.analysis-steps li b{font-size:.62rem;line-height:1.2}
+.analysis-steps li span{color:var(--muted);font-size:.54rem}
+.analysis-steps li.running{border-color:#8caeca;background:#edf5fb}
+.analysis-steps li.running i{background:#4f86b5;color:white}
+.analysis-steps li.completed{border-color:#99bda9;background:#eef6f0}
+.analysis-steps li.completed i{background:var(--green);color:white}
+.analysis-steps li.failed{border-color:#e0a392;background:#fff0eb}
+.analysis-steps li.failed i{background:var(--coral);color:white}
+.analysis-request-large{max-width:260px}
+
+@media(max-width:1050px){
+  .company-row{grid-template-columns:3rem minmax(220px,1fr) minmax(95px,.5fr) minmax(110px,.6fr) minmax(112px,auto)}
+  .analysis-steps{grid-template-columns:1fr 1fr}
+}
+
+@media(max-width:720px){
+  .company-row{grid-template-columns:3rem minmax(0,1fr);align-items:start}
+  .company-row .coverage,.company-row .data-status{display:none}
+  .company-row .analysis-action-wrap,.company-row>.analysis-action{grid-column:1/-1;width:100%}
+  .analysis-steps{grid-template-columns:1fr}
+  .analysis-request-large{max-width:none}
+}
+/* Annual comparisons retain neutral semantics and scroll on narrow screens. */
+.annual-comparison { margin: 24px 0; padding: 20px; border: 1px solid #d9d9d1; border-radius: 14px; background: #fffefa; }
+.annual-comparison summary { cursor: pointer; color: #087e80; font-weight: 600; }
+.annual-comparison p { font-size: 13px; line-height: 1.6; color: #647477; margin: 14px 0; }
+.annual-comparison .statement-table-wrap { margin-top: 16px; overflow-x: auto; }
+.annual-comparison td small { display: block; max-width: 280px; white-space: normal; }

@@ -2,10 +2,10 @@
 
 ## Copiloto de análisis fundamental para empresas peruanas
 
-**Estado:** Borrador inicial listo para desarrollo  
-**Versión:** 1.0  
+**Estado:** Actualizado después de validación inicial con usuarios
+**Versión:** 1.1
 **Mercado inicial:** Perú  
-**Sector piloto:** Empresas mineras no financieras supervisadas por la SMV  
+**Sector piloto:** Empresas mineras, con expansión progresiva a emisores no financieros supervisados por la SMV
 **Tipo de producto:** Aplicación web de investigación financiera  
 
 ---
@@ -75,7 +75,8 @@ Inversionista individual o analista junior que:
 
 El MVP debe demostrar que la plataforma puede:
 
-1. Ingerir información oficial de un universo pequeño y definido.
+1. Mantener un catálogo navegable de emisores de la SMV y procesar bajo demanda las
+   empresas compatibles con el alcance sectorial del MVP.
 2. Normalizar estados financieros de manera confiable.
 3. Calcular indicadores sin delegar operaciones matemáticas a un modelo de lenguaje.
 4. Explicar los cambios más importantes entre periodos.
@@ -97,27 +98,59 @@ El MVP debe demostrar que la plataforma puede:
 
 ## 5. Alcance cerrado del MVP
 
-### 5.1 Universo inicial
+### 5.1 Catálogo y alcance sectorial
 
-El MVP cubrirá ocho empresas mineras no financieras:
+El directorio del MVP permitirá buscar los emisores identificados en el catálogo
+oficial de la SMV, aunque todavía no hayan sido analizados. La presencia de una empresa
+en el catálogo no implica que sus datos estén completos ni verificados.
 
-1. Compañía de Minas Buenaventura S.A.A.
-2. Minsur S.A.
-3. Volcan Compañía Minera S.A.A.
-4. Sociedad Minera Cerro Verde S.A.A.
-5. Compañía Minera Poderosa S.A.A.
-6. Nexa Resources Perú S.A.A.
-7. Sociedad Minera El Brocal S.A.A.
-8. Shougang Hierro Perú S.A.A.
+La profundidad de cobertura se ampliará por niveles:
 
-La denominación y los identificadores oficiales deberán confirmarse durante la primera exploración de datos. Una empresa sólo ingresará al MVP si dispone de información suficiente y comparable en las fuentes autorizadas.
+1. **Empresas mineras no financieras:** análisis completo cuando existan fuentes
+   oficiales suficientes. Buenaventura, Minsur, Volcan y Poderosa constituyen la
+   cohorte inicial ya procesada.
+2. **Otros emisores no financieros:** estados financieros y métricas compatibles como
+   primer resultado; el análisis documental se habilitará progresivamente después de
+   validar las particularidades del sector.
+3. **Bancos, aseguradoras, AFP, fondos y otros formatos financieros especiales:**
+   visibles en el buscador, pero fuera del análisis automático de este MVP.
 
-### 5.2 Cobertura temporal
+Una empresa sólo se publicará como analizada cuando sus identificadores, periodos,
+moneda, alcance y fuentes hayan superado las validaciones correspondientes. Si la
+escala monetaria aún no está verificada, se podrán publicar los cálculos sobre la
+magnitud original reportada por la SMV, sin convertirla ni heredar una escala. Cada
+tarjeta afectada tendrá un borde distintivo, la etiqueta `Escala no verificada` y una
+advertencia para que el usuario confirme si corresponde a unidades, miles o millones.
+El procesamiento documental intentará verificar la escala por estado mediante una
+fuente oficial: deberá confirmar identidad, ejercicio principal, alcance, moneda,
+encabezado de escala y al menos tres cuentas con importes actuales y comparativos
+coincidentes. Conservará URL, hash, página y evidencia de comparación. Sólo entonces
+actualizará la escala y recalculará la presentación de las métricas. Si no encuentra
+fuente accesible o existe ambigüedad, conservará la advertencia.
+También se aceptará una declaración general de moneda y escala en las notas cuando
+aplique explícitamente a todos los estados. En ese caso se exigirán tres cuentas
+económicas distintas contrastadas en tablas con años y unidades identificados, de al
+menos dos estados, y al menos una coincidencia propia para cada estado actualizado.
+Se conservarán la declaración, sus salvedades y las páginas de las tablas; excepciones
+específicas o evidencia contradictoria mantendrán la escala como no verificada.
+Las métricas no aplicables a un sector se mostrarán como no disponibles y nunca se
+estimarán para completar el panel.
 
-- Últimos cinco ejercicios anuales completos.
-- Últimos ocho trimestres disponibles.
-- Información anual auditada e intermedia cuando corresponda.
+El sello `validación automática aprobada` indicará que todas las reglas críticas
+pasaron. El sello `verificada` se reservará para empresas y periodos que además hayan
+superado la muestra de revisión manual definida para la cohorte de validación.
+
+### 5.2 Cobertura temporal progresiva
+
+- La primera solicitud de una empresa priorizará el último ejercicio anual completo.
+- Cuando las fuentes estén disponibles, se incorporará el ejercicio anual anterior
+  para habilitar variaciones y comparación narrativa de notas.
+- Los últimos cinco ejercicios anuales y ocho trimestres continúan como objetivo de
+  cobertura progresiva, no como requisito para mostrar un primer análisis útil.
+- Se incorporará información anual auditada e intermedia cuando corresponda.
 - Se conservarán versiones anteriores si una empresa presenta cifras rectificadas.
+- La interfaz mostrará de forma explícita qué periodos están disponibles y cuáles
+  continúan pendientes, no son compatibles o no fueron publicados por la fuente.
 
 ### 5.3 Documentos incluidos
 
@@ -135,11 +168,27 @@ La denominación y los identificadores oficiales deberán confirmarse durante la
 
 #### Directorio de empresas
 
-- Listado de las ocho empresas.
-- Búsqueda por nombre o símbolo.
+- Catálogo sincronizado de emisores de la SMV.
+- Búsqueda por razón social, nombre conocido, símbolo o identificador SMV.
+- Distinción entre empresa catalogada y empresa efectivamente analizada.
 - Último periodo disponible.
 - Fecha de la última actualización.
-- Indicador de estado de los datos: verificado, parcial o pendiente.
+- Indicador de cobertura: disponible, parcial, en cola, procesando, requiere revisión,
+  no analizada o no compatible con el MVP.
+
+#### Análisis bajo demanda
+
+- Si la empresa ya está analizada, la acción principal será `Ver análisis`.
+- Si existe un trabajo activo, se mostrará su estado y progreso sin crear duplicados.
+- Si todavía no fue analizada y es compatible, la acción será `Generar análisis`.
+- La solicitud se ejecutará en segundo plano y continuará aunque el usuario cierre la
+  página o termine su sesión.
+- El usuario podrá volver al directorio o al panel para consultar el estado.
+- Los resultados se publicarán progresivamente: primero estados financieros, después
+  métricas y finalmente notas, búsqueda, resúmenes y comparaciones.
+- Cada resultado parcial indicará qué etapas terminaron y cuáles siguen pendientes.
+- Si la automatización no puede resolver una fuente o validación, el trabajo pasará a
+  `requiere revisión` con una explicación comprensible, sin publicar datos dudosos.
 
 #### Panel de empresa
 
@@ -384,35 +433,47 @@ El texto definitivo deberá ser revisado legalmente.
 
 ### Flujo principal
 
-1. El usuario abre el directorio.
-2. Selecciona una empresa.
-3. Visualiza el último periodo y los cambios más importantes.
-4. Inspecciona gráficos e indicadores.
-5. Abre la evidencia de cualquier cifra o afirmación.
-6. Compara con otra empresa o periodo.
-7. Consulta una pregunta específica al asistente.
-8. Evalúa riesgos, datos faltantes y hechos recientes.
+1. El usuario busca una empresa del catálogo SMV.
+2. El sistema consulta su estado de cobertura.
+3. Si está disponible, el usuario selecciona `Ver análisis`.
+4. Si no está analizada y es compatible, selecciona `Generar análisis`.
+5. El sistema registra una sola solicitud, la ejecuta en segundo plano y muestra su
+   etapa actual.
+6. En cuanto los estados y métricas están disponibles, el usuario puede abrir un
+   análisis parcial sin esperar el procesamiento documental.
+7. El usuario inspecciona indicadores y abre la evidencia de cualquier cifra o
+   afirmación.
+8. Cuando existen datos compatibles, compara empresas o periodos.
+9. Cuando el análisis documental está listo, revisa notas, resúmenes y cambios entre
+   periodos.
+10. El usuario puede abandonar el flujo y volver después sin perder el estado del
+    trabajo.
 
 ### Pantallas mínimas
 
 1. Inicio y directorio.
-2. Panel de empresa.
-3. Estados e indicadores.
-4. Comparador.
-5. Documentos y citas.
-6. Hechos de importancia.
-7. Asistente.
-8. Metodología y limitaciones.
+2. Solicitud y progreso del análisis.
+3. Panel de empresa.
+4. Estados e indicadores.
+5. Comparador.
+6. Documentos y citas.
+7. Hechos de importancia.
+8. Asistente.
+9. Metodología, cobertura y limitaciones.
 
 ### Estados que toda pantalla debe contemplar
 
 - Cargando.
+- No analizada.
+- En cola.
+- Procesando, con etapa actual visible.
 - Sin información.
 - Información parcial.
 - Fuente no disponible.
 - Error de actualización.
 - Datos pendientes de revisión.
 - Datos rectificados.
+- Empresa o sector no compatible con el alcance actual.
 
 ---
 
@@ -432,6 +493,11 @@ La elección es recomendada, no una obligación contractual.
 - Python con FastAPI.
 - Procesos separados para ingestión, normalización, validación y publicación.
 - Tareas asíncronas para documentos y modelos de IA.
+- Cola persistente para análisis bajo demanda, con deduplicación, reintentos y
+  recuperación de trabajos interrumpidos.
+- La solicitud HTTP sólo registrará o consultará el trabajo; no mantendrá la conexión
+  abierta durante la ingestión.
+- Cada etapa será idempotente para poder reanudar el proceso sin duplicar datos.
 
 ### Datos
 
@@ -442,18 +508,20 @@ La elección es recomendada, no una obligación contractual.
 
 ### Componentes lógicos
 
-1. Conectores de fuentes.
-2. Registro de documentos.
-3. Extractor estructurado.
-4. Extractor de PDF y OCR como respaldo.
-5. Normalizador contable.
-6. Motor de validaciones.
-7. Motor de indicadores.
-8. Índice documental.
-9. Servicio de explicaciones y preguntas.
-10. API de producto.
-11. Interfaz web.
-12. Panel interno de revisión.
+1. Sincronizador del catálogo de empresas de la SMV.
+2. Orquestador y cola de análisis bajo demanda.
+3. Conectores de fuentes.
+4. Registro y descubrimiento de documentos oficiales.
+5. Extractor estructurado.
+6. Extractor de PDF y OCR como respaldo.
+7. Normalizador contable con reglas por sector.
+8. Motor de validaciones.
+9. Motor de indicadores compatibles por sector.
+10. Índice documental.
+11. Servicio de explicaciones y preguntas.
+12. API de producto y consulta de progreso.
+13. Interfaz web.
+14. Panel interno de revisión.
 
 ### Principio arquitectónico
 
@@ -467,6 +535,9 @@ La base de datos financiera es la fuente de verdad para cifras. El índice semá
 
 - `companies`
 - `securities`
+- `company_coverage`
+- `analysis_jobs`
+- `analysis_job_steps`
 - `filings`
 - `documents`
 - `document_pages`
@@ -487,6 +558,9 @@ La base de datos financiera es la fuente de verdad para cifras. El índice semá
 - Conservar el documento original y su hash.
 - Registrar qué proceso creó o modificó un dato.
 - Registrar versión de fórmula, extractor, modelo y prompt.
+- Registrar quién o qué proceso solicitó un análisis, sin exponer esta información a
+  otros usuarios.
+- Conservar el historial de estados, intentos y errores de cada trabajo.
 - Poder reconstruir cualquier panel histórico.
 
 ---
@@ -501,7 +575,9 @@ La base de datos financiera es la fuente de verdad para cifras. El índice semá
 - Acceso mínimo necesario para servicios y administradores.
 - Registro de acciones administrativas.
 - Copias de seguridad automáticas y prueba de restauración.
-- Límites de solicitudes para APIs y asistente.
+- Límites de solicitudes para APIs, asistente y generación de análisis.
+- Sólo se descargarán documentos desde proveedores y dominios autorizados; el usuario
+  no podrá proporcionar una URL arbitraria al worker.
 - Política de retención y eliminación de cuentas.
 
 ---
@@ -518,6 +594,10 @@ La base de datos financiera es la fuente de verdad para cifras. El índice semá
 - Panel inicial visible en menos de 3 segundos con caché caliente.
 - Consultas normales de comparación en menos de 5 segundos.
 - Respuesta inicial del asistente en menos de 10 segundos, salvo aviso explícito.
+- El registro de una solicitud de análisis responderá en menos de 3 segundos y nunca
+  esperará a que termine la ingestión.
+- No se prometerá un tiempo total de procesamiento hasta medirlo por tipo de empresa y
+  documento; la interfaz mostrará etapa, última actividad y resultado disponible.
 
 ### Disponibilidad
 
@@ -534,6 +614,9 @@ La base de datos financiera es la fuente de verdad para cifras. El índice semá
 ### Observabilidad
 
 - Errores de ingestión.
+- Cantidad, antigüedad y duración por etapa de los trabajos de análisis.
+- Trabajos en cola, reintentando, bloqueados o pendientes de revisión.
+- Solicitudes deduplicadas y empresas más solicitadas.
 - Antigüedad de los datos por empresa.
 - Documentos pendientes.
 - Validaciones fallidas.
@@ -552,6 +635,8 @@ Antes de crear herramientas administrativas generales, el MVP necesita una vista
 - Aprobar o rechazar periodos.
 - Resolver cuentas no mapeadas.
 - Revisar validaciones fallidas.
+- Inspeccionar y reintentar trabajos de análisis fallidos.
+- Resolver descubrimientos de fuentes que requieren intervención.
 - Ver respuestas de IA reportadas.
 - Republicar una empresa después de una corrección.
 
@@ -563,6 +648,12 @@ La revisión manual es parte del MVP; no debe ocultarse como trabajo excepcional
 
 Eventos mínimos:
 
+- Empresa buscada en el catálogo.
+- Análisis solicitado.
+- Solicitud deduplicada.
+- Etapa de análisis completada o fallida.
+- Análisis parcial abierto.
+- Análisis completo abierto.
 - Empresa consultada.
 - Periodo cambiado.
 - Indicador inspeccionado.
@@ -581,21 +672,38 @@ No registrar el texto completo de preguntas sensibles sin consentimiento y polí
 
 El MVP estará terminado cuando:
 
-1. Las ocho empresas tengan los cinco años y ocho trimestres acordados, o una explicación pública de cada ausencia.
-2. Los tres estados principales puedan consultarse con fuente y versión.
-3. Todos los indicadores definidos tengan fórmula visible.
-4. Las validaciones críticas bloqueen datos inconsistentes.
-5. El comparador impida periodos o estados incompatibles.
-6. El usuario pueda abrir la evidencia de cualquier cifra destacada.
-7. Los resúmenes separen hechos, interpretación y datos faltantes.
-8. El asistente se abstenga cuando no disponga de evidencia.
-9. Los hechos de importancia se actualicen al menos una vez al día.
-10. El sistema muestre la fecha de actualización de cada empresa.
-11. Existan pruebas automatizadas de fórmulas, unidades, periodos y permisos.
-12. Se realice una revisión manual de una muestra mínima de 200 observaciones por empresa.
-13. No existan errores críticos conocidos de exactitud o trazabilidad.
-14. Al menos 15 usuarios completen la prueba de validación.
-15. Se documenten resultados, disposición a pagar y decisión de continuar, ajustar o detener.
+1. El usuario pueda encontrar por nombre o identificador los emisores sincronizados del
+   catálogo SMV, incluso si todavía no tienen análisis.
+2. Una empresa minera compatible que no forme parte de la carga inicial pueda
+   solicitarse desde la interfaz y completar el flujo sin agregarla manualmente a una
+   lista en el código.
+3. Dos solicitudes simultáneas para la misma empresa, alcance y periodo produzcan un
+   solo trabajo reutilizable.
+4. El trabajo continúe después de abandonar la página y pueda recuperarse después de
+   reiniciar un worker.
+5. La interfaz distinga disponible, parcial, en cola, procesando, requiere revisión,
+   no analizada y no compatible.
+6. Los estados financieros y métricas terminados puedan consultarse antes de completar
+   las etapas documentales.
+7. Los tres estados principales disponibles puedan consultarse con fuente y versión.
+8. Todos los indicadores publicados tengan fórmula visible y las métricas no
+   compatibles se muestren como no disponibles.
+9. Las validaciones críticas bloqueen datos inconsistentes y envíen el trabajo a
+   revisión.
+10. El comparador impida monedas, periodos, alcances o estados incompatibles.
+11. El usuario pueda abrir la evidencia de cualquier cifra destacada.
+12. Los resúmenes separen hechos, interpretación y datos faltantes.
+13. El asistente se abstenga cuando no disponga de evidencia.
+14. Los hechos de importancia incorporados se actualicen al menos una vez al día.
+15. El sistema muestre cobertura, etapa y fecha de actualización de cada empresa.
+16. Existan pruebas automatizadas de cola, deduplicación, recuperación, fórmulas,
+    unidades, periodos, permisos y bloqueo de publicación.
+17. La cohorte utilizada para validar el MVP tenga una revisión manual de al menos 200
+    observaciones por empresa antes de recibir el estado `verificada`.
+18. No existan errores críticos conocidos de exactitud o trazabilidad.
+19. Al menos 15 usuarios completen la prueba de validación.
+20. Se documenten resultados, empresas solicitadas, tiempos de procesamiento,
+    disposición a pagar y decisión de continuar, ajustar o detener.
 
 ---
 
@@ -603,22 +711,27 @@ El MVP estará terminado cuando:
 
 ### Orden vigente de ejecución
 
-El desarrollo posterior a la Fase 10 se realizará en lotes verificables y en este
+El desarrollo posterior a la Fase 12 se realizará en lotes verificables y en este
 orden. No se inicia un bloque posterior mientras el anterior conserve fallos críticos
 de exactitud o trazabilidad:
 
-1. **Ampliar cobertura de datos (máxima prioridad).** Incorporar progresivamente las
-   ocho empresas y los periodos acordados. Lotes completados: Volcan como tercera y
-   Poderosa como cuarta empresa, con estados consolidados 2025 y notas auditadas
-   2024–2025.
-2. **Endurecimiento de producto.** Seguridad, rendimiento, accesibilidad, copias de
-   seguridad y revisión legal.
-3. **Analítica y validación con usuarios.** Instrumentación mínima, pruebas observadas
-   y validación de disposición a pagar.
-4. **Completar eventos y alertas.** Ampliar fuentes oficiales, actualización y avisos.
-5. **Asistente con abstención y trazabilidad usando NVIDIA.** Sólo después de validar
+1. **Catálogo SMV y análisis progresivo bajo demanda (máxima prioridad).** Sincronizar
+   el catálogo, generalizar alcance y periodo, crear la cola por etapas y mostrar su
+   progreso en la aplicación.
+2. **Validar el camino dinámico con minería.** Procesar desde la interfaz al menos una
+   empresa compatible que no esté incluida en la carga inicial y eliminar la necesidad
+   de mantener una lista fija de empresas en el código.
+3. **Ampliar minería y habilitar cobertura básica no financiera.** Incorporar emisores
+   según demanda y agregar reglas sectoriales sólo después de probar sus estados y
+   métricas con fuentes oficiales.
+4. **Endurecimiento de producto.** Seguridad, cuotas, rendimiento, accesibilidad,
+   copias de seguridad y revisión legal.
+5. **Analítica y validación con usuarios.** Medir búsquedas, solicitudes, tiempos,
+   aperturas de análisis parciales y disposición a pagar.
+6. **Completar eventos y alertas.** Ampliar fuentes oficiales, actualización y avisos.
+7. **Asistente con abstención y trazabilidad usando NVIDIA.** Sólo después de validar
    cobertura, calidad y uso real; nunca se usará para calcular cifras financieras.
-6. **Pendientes post-MVP.** Incluye reconstrucción de tablas de notas y mejoras que no
+8. **Pendientes post-MVP.** Incluye reconstrucción de tablas de notas y mejoras que no
    bloquean el piloto.
 
 Las fases siguientes conservan el diseño técnico base ya ejecutado y sirven como
@@ -627,11 +740,11 @@ registro histórico de sus entregables.
 ### Fase 0: exploración de datos
 
 - Confirmar fuentes, licencias y formatos.
-- Descargar una muestra por cada empresa.
+- Descargar una muestra representativa por cada sector que se pretenda habilitar.
 - Verificar identificadores, periodos, moneda y consolidación.
 - Probar XBRL, datos abiertos y PDFs.
 - Crear un diccionario inicial de cuentas.
-- Confirmar que las ocho empresas son técnicamente cubribles.
+- Confirmar que una cohorte minera diversa es técnicamente cubrible.
 
 **Salida obligatoria:** informe de viabilidad de datos y una empresa procesada de extremo a extremo.
 
@@ -691,6 +804,9 @@ registro histórico de sus entregables.
 
 ### Pruebas unitarias
 
+- Transiciones válidas de estados y etapas de análisis.
+- Claves de deduplicación por empresa, alcance y periodo.
+- Reanudación y política de reintentos.
 - Fórmulas financieras.
 - Conversión de unidades.
 - Normalización de fechas.
@@ -699,6 +815,10 @@ registro histórico de sus entregables.
 
 ### Pruebas de integración
 
+- Catálogo a solicitud de análisis.
+- Solicitud a trabajo en cola.
+- Trabajo a publicación parcial y completa.
+- Recuperación después del reinicio del worker.
 - Fuente a documento.
 - Documento a observación.
 - Observación a indicador.
@@ -734,8 +854,10 @@ registro histórico de sus entregables.
 | Licencias de noticias | Alto | Fuentes primarias y acuerdos/API autorizados |
 | Mercado B2C pequeño | Alto | Validación de pago y posterior enfoque B2B/LatAm |
 | Scraping inestable | Medio | Fuentes estructuradas, caché y conectores versionados |
-| Diferencias contables | Alto | Un solo sector inicial y diccionario versionado |
-| Costes de modelos | Medio | Procesamiento por lotes, caché y modelos según tarea |
+| Diferencias contables entre sectores | Alto | Reglas y métricas versionadas por sector; no aplicar equivalencias no validadas |
+| Saturación por solicitudes | Alto | Cola persistente, cuotas por usuario, deduplicación y prioridad por demanda |
+| Documentos no descubribles automáticamente | Alto | Lista de dominios oficiales, reintentos y estado de revisión manual |
+| Costes de modelos y procesamiento | Medio | Análisis bajo demanda, caché, reutilización de resultados y modelos según tarea |
 | Resúmenes poco útiles | Medio | Evaluación con analistas y medición de fuentes abiertas |
 
 ---
@@ -781,8 +903,13 @@ Los precios son hipótesis, no decisiones definitivas.
 
 Salvo evidencia crítica nueva:
 
-- Se comienza con un solo sector.
-- Se cubren ocho empresas.
+- El catálogo SMV es buscable aunque una empresa todavía no esté analizada.
+- El análisis completo comienza con minería y se amplía por compatibilidad sectorial,
+  no por una cantidad fija de empresas.
+- Los emisores no financieros compatibles pueden recibir un análisis básico; bancos,
+  aseguradoras, AFP, fondos y formatos financieros especiales quedan fuera del análisis
+  automático de este MVP.
+- El procesamiento bajo demanda es asíncrono, progresivo, reanudable y deduplicado.
 - No hay recomendación de compra o venta.
 - No hay precios en tiempo real.
 - No hay aplicación móvil nativa.
@@ -790,12 +917,14 @@ Salvo evidencia crítica nueva:
 - Toda cifra tiene trazabilidad.
 - Los datos inconsistentes no se publican.
 - La revisión humana forma parte de la operación inicial.
-- La cobertura dentro del universo cerrado se amplía progresivamente y cada empresa
-  debe superar el mismo control de calidad antes de publicarse.
+- Una empresa puede publicarse con validación automática aprobada; el estado
+  `verificada` exige además revisión manual.
+- La amplitud del catálogo nunca justificará publicar datos sin fuente o que fallen
+  controles críticos.
 
 ---
 
-## 24. Preguntas que la fase 0 debe resolver
+## 24. Preguntas de datos y expansión que deben resolverse
 
 - ¿Qué datos de la SMV están disponibles en XBRL, JSON o Excel por empresa y periodo?
 - ¿Qué límites técnicos y legales existen para su reutilización?
@@ -804,26 +933,44 @@ Salvo evidencia crítica nueva:
 - ¿Qué documentos requieren OCR?
 - ¿Qué fuente oficial ofrece el mejor historial de hechos de importancia?
 - ¿Qué métricas mineras adicionales pueden calcularse de manera consistente?
+- ¿Cómo se sincroniza el catálogo completo y se detectan altas, bajas o cambios de
+  identificador?
+- ¿Qué documentos oficiales pueden descubrirse sin configuración manual?
+- ¿Qué reglas y métricas son reutilizables en otros sectores no financieros?
+- ¿Cuánto tarda cada etapa y cuántos trabajos simultáneos soporta la infraestructura?
 - ¿Cuánto tiempo de revisión humana requiere una actualización?
 - ¿Cuál es el coste por empresa y periodo?
 
-No se ampliará el alcance hasta responder estas preguntas con evidencia.
+No se habilitará análisis automático completo para un nuevo sector hasta responder
+sus preguntas de compatibilidad con evidencia.
 
 ---
 
 ## 25. Próximos pasos inmediatos
 
-1. Generalizar el corte por empresa para admitir estados individuales sin presentarlos
-   como consolidados.
-2. Incorporar Cerro Verde, Nexa Resources Perú, El Brocal y Shougang con su alcance
-   real publicado por la SMV.
-4. Completar cinco años y ocho trimestres por empresa, o publicar la razón verificable
-   de cada ausencia.
-5. Construir el conjunto dorado y revisar una muestra mínima de 200 observaciones por
-   empresa antes de cerrar la ampliación de cobertura.
+1. Sincronizar un catálogo SMV separado de las empresas que ya tienen análisis.
+2. Generalizar empresa, periodo y alcance para admitir estados individuales sin
+   presentarlos como consolidados.
+3. Convertir la ingestión actual en un trabajo `company_analysis` persistente,
+   deduplicado y dividido en etapas reanudables.
+4. Exponer API y pantalla para solicitar el análisis y consultar su progreso.
+5. Automatizar, hasta donde permitan las fuentes oficiales, el descubrimiento de notas
+   y enviar las excepciones al panel de revisión.
+6. Validar el flujo completo con una empresa minera que no forme parte de la carga
+   inicial, sin modificar una lista fija ni reiniciar la aplicación.
+7. Medir tiempos y fallos antes de prometer una duración al usuario.
+8. Construir el conjunto dorado y revisar la muestra mínima de 200 observaciones por
+   empresa de la cohorte que recibirá el estado `verificada`.
 
 ---
 
 ## 26. Definición resumida del producto
 
-El MVP no es un lector genérico de PDFs ni un sistema que adivina el precio futuro de una acción. Es una aplicación de investigación financiera para ocho empresas mineras peruanas, con datos históricos normalizados, indicadores reproducibles, documentos oficiales, hechos de importancia y explicaciones citadas. Su éxito se medirá por exactitud, ahorro de tiempo y disposición real a pagar.
+El MVP no es un lector genérico de PDFs ni un sistema que adivina el precio futuro de
+una acción. Es una aplicación de investigación financiera con un catálogo navegable de
+emisores peruanos y análisis progresivo bajo demanda. Comienza con cobertura completa
+para empresas mineras compatibles, ofrece resultados básicos a otros emisores no
+financieros cuando las reglas lo permiten y preserva datos normalizados, indicadores
+reproducibles, documentos oficiales, hechos de importancia y explicaciones citadas.
+Su éxito se medirá por exactitud, ahorro de tiempo, empresas efectivamente solicitadas
+y disposición real a pagar.

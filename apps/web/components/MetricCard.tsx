@@ -59,6 +59,10 @@ export function formatMetric(metric: Metric) {
   return `${prefix}${new Intl.NumberFormat("es-PE", { maximumFractionDigits: 1 }).format(value / divisor)}${suffix}`;
 }
 
+function hasUnverifiedScale(metric: Metric) {
+  return metric.status === "computed" && metric.value_kind === "monetary" && metric.value_scale === null;
+}
+
 function formatInput(
   value: string | number | null,
   currencyCode: string | null,
@@ -75,6 +79,7 @@ function formatInput(
 function MetricExplanation({ metric }: { metric: Metric }) {
   const inputs = Object.entries(metric.inputs);
   const showComparative = metricsUsingComparative.has(metric.metric_code);
+  const unverifiedScale = hasUnverifiedScale(metric);
 
   return <div className="metric-explanation">
     <div className="metric-formula">
@@ -96,6 +101,7 @@ function MetricExplanation({ metric }: { metric: Metric }) {
     </div>}
 
     {metric.status === "not_available" && <p className="metric-unavailable">Motivo: {metric.reason}</p>}
+    {unverifiedScale && <p className="metric-scale-warning">Advertencia: la escala monetaria no está verificada. El valor conserva la magnitud calculada a partir de los importes reportados por la SMV; valida si corresponde a unidades, miles o millones.</p>}
     <div className="metric-result"><span>Resultado</span><b>{formatMetric(metric)}</b><small>Fórmula versión {metric.formula_version}</small></div>
   </div>;
 }
@@ -111,8 +117,10 @@ export function MetricCard({
   sourceUrl?: string | null;
   sourceLabel?: string;
 }) {
-  return <article className={`metric-card ${featured ? "featured" : ""}`}>
-    <div className="metric-title"><span>{metric.display_name}</span><i>{metric.status === "computed" ? "Verificado" : "Pendiente"}</i></div>
+  const unverifiedScale = hasUnverifiedScale(metric);
+
+  return <article className={`metric-card ${featured ? "featured" : ""} ${unverifiedScale ? "scale-unverified" : ""}`}>
+    <div className="metric-title"><span>{metric.display_name}</span><i>{unverifiedScale ? "Escala no verificada" : metric.status === "computed" ? "Verificado" : "Pendiente"}</i></div>
     <strong>{formatMetric(metric)}</strong>
     <p>{metric.description}</p>
     <details>

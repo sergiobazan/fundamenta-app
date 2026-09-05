@@ -8,7 +8,7 @@ No es necesario abrir una consola ni ejecutar comandos SQL después del desplieg
 La API ejecuta `app.runtime` antes de iniciar su proceso normal. Ese módulo:
 
 1. toma un bloqueo de PostgreSQL para que sólo una instancia inicialice la base;
-2. descubre y aplica en orden las doce migraciones de `infra/postgres/init`;
+2. descubre y aplica en orden las diecisiete migraciones de `infra/postgres/init`;
 3. registra cada migración y su SHA-256 en `schema_migrations`;
 4. comprueba si el corte inicial ya está completo;
 5. si falta información, descarga desde la SMV los tres tipos de estado financiero
@@ -20,12 +20,19 @@ La API ejecuta `app.runtime` antes de iniciar su proceso normal. Ese módulo:
 10. genera resúmenes extractivos con citas y estados de evidencia insuficiente;
 11. empareja las notas de ambos ejercicios y fija la evidencia utilizada en la
     comparación narrativa;
-12. valida cantidades mínimas, métricas disponibles y controles contables.
+12. valida cantidades mínimas, métricas disponibles y controles contables;
+13. sincroniza el catálogo de emisores a partir de estados individuales y consolidados;
+14. inicia el worker interno que procesa solicitudes de análisis bajo demanda.
 
 Si Render reinicia, despierta o redespliega el servicio, no se duplican filings,
 métricas, eventos ni documentos de notas. En cada nuevo mes el arranque de la API
 encola y procesa una revisión de los PDF; por eso la actualización ocurre al primer
 despertar mensual del servicio gratuito.
+
+Los trabajos de análisis se guardan en PostgreSQL. Si el servicio duerme o se reinicia
+durante uno, el worker recupera el trabajo pendiente en el siguiente arranque. La
+interfaz conserva el progreso ya confirmado y no necesita mantener una conexión HTTP
+abierta.
 
 ## Recursos incluidos en el Blueprint
 
@@ -46,6 +53,8 @@ operación permanente, y tiene estas restricciones:
   redesplegar; el avatar predeterminado sigue funcionando;
 - la revisión mensual de notas es oportunista: se ejecuta cuando la API vuelve a
   arrancar durante el nuevo mes, no en una hora exacta.
+- un análisis bajo demanda puede pausarse si la API gratuita duerme; el estado se
+  conserva y se reanuda al siguiente despertar.
 
 ## Crear los recursos
 

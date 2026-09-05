@@ -9,6 +9,7 @@ export type User = {
 };
 
 export type Metric = {
+  comparative?: Pick<Metric, "status" | "value" | "currency_code" | "value_scale" | "reason" | "inputs">;
   metric_code: string;
   display_name: string;
   description: string;
@@ -44,6 +45,66 @@ export type Company = {
   sector: string | null;
   ciiu: string | null;
   updated_at: string;
+  support_level: "full" | "basic" | "unsupported";
+  analysis_status:
+    | "not_analyzed"
+    | "queued"
+    | "processing"
+    | "partial"
+    | "available"
+    | "review_required"
+    | "failed"
+    | "unsupported";
+  preferred_scope: "individual" | "consolidated" | null;
+  available_scopes: Array<"individual" | "consolidated">;
+  latest_fiscal_year: number | null;
+  completed_steps: Array<"statements" | "metrics" | "documents" | "summaries">;
+  validation_tier: "automatic" | "verified";
+  last_error: string | null;
+  last_requested_at: string | null;
+  last_completed_at: string | null;
+  filings_count: number;
+  failed_validations: number;
+  has_analysis: boolean;
+  job_id: number | null;
+  job_status: AnalysisJobStatus | null;
+  job_current_step: AnalysisStepCode | "complete" | null;
+  job_progress: number | null;
+};
+
+export type AnalysisJobStatus =
+  | "queued"
+  | "running"
+  | "retrying"
+  | "completed"
+  | "review_required"
+  | "failed";
+
+export type AnalysisStepCode = "statements" | "metrics" | "documents" | "summaries";
+
+export type AnalysisJobStep = {
+  step_code: AnalysisStepCode;
+  step_order: number;
+  status: "pending" | "running" | "completed" | "skipped" | "failed";
+  started_at: string | null;
+  completed_at: string | null;
+  details: Record<string, unknown>;
+  error_message: string | null;
+};
+
+export type CompanyAnalysis = {
+  company: Omit<
+    Company,
+    "job_id" | "job_status" | "job_current_step" | "job_progress"
+  >;
+  job: {
+    id: number;
+    status: AnalysisJobStatus;
+    current_step: AnalysisStepCode | "complete" | null;
+    progress: number;
+    steps: AnalysisJobStep[];
+  } | null;
+  deduplicated?: boolean;
 };
 
 export type Filing = {

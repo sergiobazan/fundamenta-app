@@ -15,7 +15,9 @@ export default async function DocumentSearchPage({
   searchParams: Promise<{ q?: string; company?: string; topic?: string; year?: string; page?: string }>;
 }) {
   const requested = await searchParams;
-  const companies = await getCompanies();
+  const companies = (await getCompanies()).filter((candidate) =>
+    candidate.completed_steps.includes("documents")
+  );
   const query = requested.q?.trim().slice(0, 100) ?? "";
   const company = companies.some((candidate) => candidate.smv_rpj === requested.company)
     ? requested.company

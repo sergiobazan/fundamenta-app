@@ -1,6 +1,7 @@
 import { API_URL } from "./backend";
 import type {
   Company,
+  CompanyAnalysis,
   CorporateEvent,
   CorporateEventCategory,
   Filing,
@@ -25,13 +26,25 @@ export function getCompanies() {
   return apiGet<Company[]>("/companies");
 }
 
+export function getCompany(smvRpj: string) {
+  return apiGet<Company>(`/companies/${encodeURIComponent(smvRpj)}`);
+}
+
+export function getCompanyAnalysis(smvRpj: string) {
+  return apiGet<CompanyAnalysis>(`/companies/${encodeURIComponent(smvRpj)}/analysis`);
+}
+
 export function getFilings(smvRpj: string) {
   return apiGet<Filing[]>(`/companies/${encodeURIComponent(smvRpj)}/filings`);
 }
 
-export function getSummary(smvRpj: string, year = 2025) {
+export function getSummary(
+  smvRpj: string,
+  year = 2025,
+  scope: "individual" | "consolidated" = "consolidated",
+) {
   return apiGet<Summary>(
-    `/companies/${encodeURIComponent(smvRpj)}/summary?year=${year}&period=A&scope=consolidated`,
+    `/companies/${encodeURIComponent(smvRpj)}/summary?year=${year}&period=A&scope=${scope}`,
   );
 }
 
@@ -54,10 +67,11 @@ export function getStatement(
   smvRpj: string,
   statementType: Filing["statement_type"],
   year = 2025,
+  scope: "individual" | "consolidated" = "consolidated",
 ) {
   return apiGet<FinancialStatement>(
     `/companies/${encodeURIComponent(smvRpj)}/statements/${statementType}` +
-      `?year=${year}&period=A&scope=consolidated&normalized_only=true`,
+      `?year=${year}&period=A&scope=${scope}&normalized_only=true`,
   );
 }
 
@@ -65,15 +79,22 @@ export function getNotes(
   smvRpj: string,
   {
     year = 2025,
+    scope = "consolidated",
     topic,
     priorityOnly = false,
     query,
-  }: { year?: number; topic?: NoteTopic; priorityOnly?: boolean; query?: string } = {},
+  }: {
+    year?: number;
+    scope?: "individual" | "consolidated";
+    topic?: NoteTopic;
+    priorityOnly?: boolean;
+    query?: string;
+  } = {},
 ) {
   const params = new URLSearchParams({
     year: String(year),
     period: "A",
-    scope: "consolidated",
+    scope,
   });
   if (topic) params.set("topic", topic);
   if (priorityOnly) params.set("priority_only", "true");
@@ -107,11 +128,13 @@ export function getNoteComparison(
   {
     currentYear = 2025,
     previousYear = 2024,
+    scope = "consolidated",
     topic,
     priorityOnly = true,
   }: {
     currentYear?: number;
     previousYear?: number;
+    scope?: "individual" | "consolidated";
     topic?: NoteTopic;
     priorityOnly?: boolean;
   } = {},
@@ -120,7 +143,7 @@ export function getNoteComparison(
     current_year: String(currentYear),
     previous_year: String(previousYear),
     period: "A",
-    scope: "consolidated",
+    scope,
     priority_only: String(priorityOnly),
   });
   if (topic) params.set("topic", topic);

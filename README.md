@@ -4,9 +4,10 @@ MVP de investigación fundamental para empresas peruanas. El repositorio contien
 landing pública en Astro, una aplicación autenticada en Next.js, una API FastAPI y
 PostgreSQL.
 
-El alcance actual descarga estados financieros desde el servicio oficial de datos
-abiertos de la SMV, conserva la respuesta cruda, filtra una empresa por su código RPJ,
-normaliza un conjunto pequeño de conceptos y ejecuta una validación contable.
+El alcance actual sincroniza el catálogo de emisores desde el servicio oficial de
+datos abiertos de la SMV y permite generar análisis progresivos bajo demanda. Conserva
+la respuesta cruda, normaliza conceptos, ejecuta validaciones contables y publica sólo
+las etapas que tienen evidencia suficiente.
 
 Los recorridos reales con Buenaventura, Minsur, Volcan y Poderosa 2025 ya fueron ejecutados y
 verificados. Los primeros resultados se encuentran en
@@ -35,6 +36,8 @@ están en
 La incorporación de Poderosa, incluida su moneda PEN y la comparación de notas
 2025–2024, está en
 [`docs/FASE_12_AMPLIACION_COBERTURA_PODEROSA.md`](docs/FASE_12_AMPLIACION_COBERTURA_PODEROSA.md).
+El catálogo SMV, la cola de análisis bajo demanda y la publicación progresiva están en
+[`docs/FASE_13_CATALOGO_Y_ANALISIS_BAJO_DEMANDA.md`](docs/FASE_13_CATALOGO_Y_ANALISIS_BAJO_DEMANDA.md).
 El arranque automático sobre una base vacía y el Blueprint de Render se explican en
 [`docs/DESPLIEGUE_RENDER_DATOS_INICIALES.md`](docs/DESPLIEGUE_RENDER_DATOS_INICIALES.md).
 El Blueprint actual usa únicamente una API y un PostgreSQL gratuitos. En ese nivel,
@@ -46,7 +49,9 @@ mensual de notas se ejecuta al primer despertar de la API durante el nuevo mes.
 - `apps/landing`: sitio público Astro (puerto `4321`).
 - `apps/web`: login, registro, panel y perfil en Next.js (puerto `3000`).
 - `backend`: API FastAPI, autenticación y datos financieros (puerto `8000`).
-- `notes-worker`: sincronización al arrancar y luego mensual, con cola en PostgreSQL.
+- Worker: análisis de empresas bajo demanda y sincronización mensual de notas, con
+  colas persistentes en PostgreSQL. La API también ejecuta el worker de análisis para
+  el despliegue gratuito de un solo servicio.
 - `infra/postgres/init`: esquema SQL y migraciones iniciales.
 
 ## Requisitos
@@ -65,7 +70,7 @@ uv sync
 npm install
 ```
 
-Las doce migraciones y la carga inicial se ejecutan automáticamente al iniciar la API
+Las diecisiete migraciones y la carga inicial se ejecutan automáticamente al iniciar la API
 o el worker. Para preparar la base explícitamente durante desarrollo también puedes
 usar:
 
@@ -73,7 +78,7 @@ usar:
 PYTHONPATH=backend uv run python -m app.bootstrap
 ```
 
-El comando es idempotente: en una base vacía aplica las doce migraciones y carga
+El comando es idempotente: en una base vacía aplica las diecisiete migraciones y carga
 Buenaventura, Minsur, Volcan, Poderosa, sus métricas, cuatro eventos y las notas
 auditadas 2025 y 2024;
 en una base completa termina sin volver a descargar las fuentes.
@@ -160,6 +165,10 @@ Endpoints iniciales:
 
 - `GET /health`
 - `GET /companies`
+- `GET /companies/{smv_rpj}`
+- `GET /companies/{smv_rpj}/analysis`
+- `POST /companies/{smv_rpj}/analysis` registra un trabajo autenticado y responde sin
+  esperar la ingestión.
 - `GET /events?company_rpj=A20032&category=dividends&limit=50`
 - `GET /search/fragments?q=deuda+financiera&company_rpj=A20032&topic=debt&year=2025`
 - `GET /companies/{smv_rpj}/filings`
@@ -184,6 +193,11 @@ Endpoints iniciales:
 - Empresas verificadas: Compañía de Minas Buenaventura S.A.A. (`B20003`),
   Minsur S.A. (`A20032`), Volcan Compañía Minera S.A.A. (`CM0001`) y Compañía
   Minera Poderosa S.A.A. (`B20041`).
+- El directorio incluye también empresas todavía no analizadas detectadas en los
+  estados anuales individuales y consolidados de la SMV.
+- Minería recibe cobertura completa cuando existen documentos verificados; otros
+  emisores no financieros reciben un análisis básico compatible. Entidades financieras
+  permanecen visibles, pero no pueden generar análisis en este MVP.
 - Corte común: cuatro estados anuales consolidados 2025; los tres primeros están en
   USD y Poderosa en PEN, todos en miles.
 - Resultado: 15 métricas por compañía y comparador con control de compatibilidad.
@@ -195,11 +209,12 @@ Endpoints iniciales:
 
 ## Sincronización automática de notas
 
-`docker compose up -d` levanta `notes-worker`. El worker sincroniza una vez al arrancar
-y luego el primer día de cada mes a las 06:00, hora de Lima. La deduplicación mensual,
-los reintentos y el versionado se guardan en PostgreSQL; no hay comandos manuales en
-el flujo normal de producción. El horario se puede cambiar con `NOTES_SYNC_DAY`,
-`NOTES_SYNC_HOUR` y `NOTES_SYNC_TIMEZONE`.
+`docker compose up -d` levanta `notes-worker`. El worker procesa solicitudes de
+análisis y sincroniza notas una vez al arrancar y luego el primer día de cada mes a las
+06:00, hora de Lima. La API inicia además un worker interno para que el Blueprint
+gratuito funcione sin un servicio adicional. La deduplicación, los reintentos, el
+progreso y el versionado se guardan en PostgreSQL. El horario se puede cambiar con
+`NOTES_SYNC_DAY`, `NOTES_SYNC_HOUR` y `NOTES_SYNC_TIMEZONE`.
 
 ## Restricción conocida
 
@@ -210,6 +225,15 @@ La escala sólo se cambia al contrastarla con un documento oficial y se conserva
 URL que la respalda. Para Buenaventura, Minsur y Volcan 2025 consolidados, la
 documentación financiera oficial confirma `US$(000)`; Poderosa reporta `S/(000)`.
 En los cuatro casos se registra `thousands` conservando su moneda original.
+Para una empresa nueva, las razones que no dependen de escala pueden publicarse
+primero. Las métricas monetarias también conservan el importe bruto calculado, pero se
+marcan con `Escala no verificada`, un borde distintivo y una advertencia; la aplicación
+no asume si la magnitud corresponde a unidades, miles o millones.
+
+El análisis bajo demanda intenta verificarla con un PDF oficial: confirma empresa,
+ejercicio, alcance y cifras coincidentes por estado, guarda la evidencia y actualiza
+la presentación. El descubrimiento requiere una fuente oficial registrada. Detalles y
+límites en [Fase 14](docs/FASE_14_VERIFICACION_DOCUMENTAL_ESCALA.md).
 
 ## Pruebas
 
