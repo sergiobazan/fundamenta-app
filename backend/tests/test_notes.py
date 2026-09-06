@@ -3,8 +3,10 @@ from pathlib import Path
 
 import pytest
 from app.notes import (
+    ExtractionResult,
     classify_note_topic,
     extract_notes_from_pages,
+    extract_notes_from_pdf,
     load_note_sources,
     validate_source_payload,
 )
@@ -93,10 +95,7 @@ def test_extracts_sequential_notes_and_ignores_a_false_heading() -> None:
             "3. Juicios y estimaciones contables significativas\nContenido tres\n"
             "4. Propiedad, planta y equipo\nContenido cuatro"
         ),
-        (
-            "NOTAS A LOS ESTADOS FINANCIEROS CONSOLIDADOS\n"
-            "5. Hechos posteriores\nContenido cinco"
-        ),
+        ("NOTAS A LOS ESTADOS FINANCIEROS CONSOLIDADOS\n5. Hechos posteriores\nContenido cinco"),
     ]
 
     notes = extract_notes_from_pages(pages)
@@ -162,6 +161,59 @@ Contenido cinco.
 
     assert [note.note_number for note in notes] == [1, 2, 3, 4, 5]
     assert notes[2].original_title == "ESTIMADOS Y CRITERIOS CONTABLES"
+
+
+def test_extracts_undotted_title_case_headings_in_contiguous_sequence() -> None:
+    pages = [
+        """Notas a los estados financieros individuales
+1 Información general
+Contenido uno.
+2 Bases de preparación
+Contenido dos.
+3 Políticas contables
+Contenido tres.
+4 Ventas netas
+Contenido cuatro.
+5 Partes relacionadas
+Contenido cinco.
+""",
+    ]
+    notes = extract_notes_from_pages(pages)
+    assert [note.note_number for note in notes] == [1, 2, 3, 4, 5]
+    assert notes[-1].original_title == "Partes relacionadas"
+
+
+def test_pdf_extraction_can_publish_a_prefix_when_later_notes_are_incomplete(monkeypatch) -> None:
+    page = """Empresa S.A. 2025 Notas a los estados financieros
+1. Primera nota
+Uno.
+2. Segunda nota
+Dos.
+3. Tercera nota
+Tres.
+4. Cuarta nota
+Cuatro.
+5. Quinta nota
+Cinco.
+7. Séptima nota
+Siete.
+"""
+
+    class Page:
+        def extract_text(self):
+            return page
+
+    class Reader:
+        is_encrypted = False
+        pages = [Page()]
+
+    monkeypatch.setattr("app.notes.PdfReader", lambda _: Reader())
+    result = extract_notes_from_pdf(b"%PDF-test", ("Empresa S.A.", "2025"))
+    assert isinstance(result, ExtractionResult)
+    assert result.extraction_status == "warning"
+    assert result.warning
+    assert [note.note_number for note in result.notes] == [1, 2, 3, 4, 5]
+    assert "Séptima" not in result.notes[-1].content_text
 
 
 def test_stops_the_last_note_before_a_supplementary_appendix() -> None:

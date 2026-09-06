@@ -26,9 +26,7 @@ APPENDIX_HEADING_RE = re.compile(
     r"(?im)^[ \t]*(?:informaci[oó]n suplementaria|recursos minerales y reservas "
     r"probadas y probables)\b"
 )
-WRAPPED_FINANCIAL_POSITION_TITLE_RE = re.compile(
-    r"\r?\n[ \t]*(FINANCIERA)[ \t]*(?:\r?\n|$)"
-)
+WRAPPED_FINANCIAL_POSITION_TITLE_RE = re.compile(r"\r?\n[ \t]*(FINANCIERA)[ \t]*(?:\r?\n|$)")
 TRAILING_STOP_WORDS = {
     "al",
     "con",
@@ -85,6 +83,8 @@ class ExtractedNote:
 class ExtractionResult:
     page_count: int
     notes: tuple[ExtractedNote, ...]
+    extraction_status: str = "extracted"
+    warning: str | None = None
 
 
 @dataclass(frozen=True)
@@ -94,6 +94,13 @@ class _Heading:
     page_index: int
     start_offset: int
     end_offset: int
+
+
+@dataclass(frozen=True)
+class _HeadingParse:
+    headings: tuple[_Heading, ...]
+    warning: str | None = None
+    tail_boundary: tuple[int, int] | None = None
 
 
 def _normalized(value: str) -> str:
@@ -186,9 +193,7 @@ def _clean_title(value: str) -> str:
     return " ".join(value.split()).rstrip(" –-:")
 
 
-def _complete_wrapped_title(
-    page_text: str, *, title: str, end_offset: int
-) -> tuple[str, int]:
+def _complete_wrapped_title(page_text: str, *, title: str, end_offset: int) -> tuple[str, int]:
     """Recupera la última palabra cuando el PDF parte un título entre líneas."""
     if not _normalized(title).endswith("estado consolidado de situacion"):
         return title, end_offset
@@ -198,16 +203,36 @@ def _complete_wrapped_title(
     return f"{title} {continuation.group(1)}", continuation.end()
 
 
-def _plausible_title(value: str, *, dotted_heading: bool = True) -> bool:
+def _title_case_note_heading(value: str) -> bool:
+    """Accept a real heading such as ``17 Partes relacionadas``.
+
+    The number must already be the next expected note. This deliberately does
+    not accept single-number cells, page footers, or dates that pypdf may put
+    at the start of a line.
+    """
+    words = re.findall(r"[A-Za-zÁÉÍÓÚÑáéíóúñ]+", value)
+    return (
+        len(words) >= 2
+        and value[:1].isupper()
+        and not re.match(r"^(?:De|Del|Al)\b", value)
+        and not re.search(r"\b(?:de|del)\s+\d{1,2}\s+de\b", value, re.IGNORECASE)
+    )
+
+
+def _plausible_title(
+    value: str, *, dotted_heading: bool = True, allow_title_case: bool = False
+) -> bool:
     if not value or len(value) > 120:
         return False
     # Algunos informes auditados (por ejemplo, Volcan) omiten el punto después
     # del número de nota. En ese formato los títulos son versales. Exigirlas
     # evita interpretar fechas como "31 de diciembre..." como una nota.
-    if not dotted_heading and value != value.upper() and not _normalized(value).startswith(
-        "jerarquia y valor razonable de los instrumentos financieros"
-    ):
-        return False
+    if not dotted_heading and value != value.upper():
+        known_heading = _normalized(value).startswith(
+            "jerarquia y valor razonable de los instrumentos financieros"
+        )
+        if not known_heading and not (allow_title_case and _title_case_note_heading(value)):
+            return False
     last_word = value.rstrip(". ").split()[-1].lower()
     return last_word not in TRAILING_STOP_WORDS
 
@@ -219,7 +244,7 @@ def _is_notes_index(text: str) -> bool:
     return len(entries) >= 3 and page_references == len(entries)
 
 
-def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
+def _parse_note_headings(page_texts: list[str]) -> _HeadingParse:
     start_page = next(
         (
             index
@@ -256,15 +281,13 @@ def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
             (match.start(), match.end(), 3, match.group(1), True)
             for match in MALFORMED_NOTE_HEADING_RE.finditer(page_texts[page_index])
         )
-        for start_offset, end_offset, note_number, raw_title, dotted_heading in sorted(
-            candidates
-        ):
+        for start_offset, end_offset, note_number, raw_title, dotted_heading in sorted(candidates):
             title = _clean_title(raw_title)
             title, end_offset = _complete_wrapped_title(
                 page_texts[page_index], title=title, end_offset=end_offset
             )
             if note_number != expected_number or not _plausible_title(
-                title, dotted_heading=dotted_heading
+                title, dotted_heading=dotted_heading, allow_title_case=True
             ):
                 continue
             headings.append(
@@ -283,18 +306,34 @@ def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
             f"Sólo se detectaron {len(headings)} notas; el documento requiere revisión"
         )
     # Do not silently absorb later numbered notes into the last accepted note.
-    for text in page_texts[start_page:]:
+    # Returning the prefix as a warning lets the user read verified early notes
+    # while the missing section is clearly marked for review.
+    for page_index, text in enumerate(page_texts[start_page:], start=start_page):
         if _is_notes_index(text):
             continue
         if APPENDIX_HEADING_RE.search(text):
             break
         for match in NOTE_HEADING_RE.finditer(text):
-            if (
-                int(match.group(1)) > headings[-1].note_number
-                and _plausible_title(match.group(3), dotted_heading=match.group(2) is not None)
+            if int(match.group(1)) > headings[-1].note_number and _plausible_title(
+                _clean_title(match.group(3)),
+                dotted_heading=match.group(2) is not None,
+                allow_title_case=True,
             ):
-                raise ValueError("La secuencia de notas está incompleta; requiere revisión")
-    return tuple(headings)
+                return _HeadingParse(
+                    tuple(headings),
+                    warning=(
+                        "La secuencia de notas está incompleta; se muestran las notas extraídas"
+                    ),
+                    tail_boundary=(page_index, match.start()),
+                )
+    return _HeadingParse(tuple(headings))
+
+
+def find_note_headings(page_texts: list[str]) -> tuple[_Heading, ...]:
+    parsed = _parse_note_headings(page_texts)
+    if parsed.warning:
+        raise ValueError("La secuencia de notas está incompleta; requiere revisión")
+    return parsed.headings
 
 
 def _clean_section_text(value: str) -> str:
@@ -309,8 +348,11 @@ def _clean_section_text(value: str) -> str:
     return "\n".join(lines).strip()
 
 
-def extract_notes_from_pages(page_texts: list[str]) -> tuple[ExtractedNote, ...]:
-    headings = find_note_headings(page_texts)
+def _extract_notes_from_headings(
+    page_texts: list[str],
+    headings: tuple[_Heading, ...],
+    tail_boundary: tuple[int, int] | None = None,
+) -> tuple[ExtractedNote, ...]:
     notes_pages = [
         index for index, text in enumerate(page_texts) if NOTES_MARKER in _normalized(text)
     ]
@@ -325,6 +367,8 @@ def extract_notes_from_pages(page_texts: list[str]) -> tuple[ExtractedNote, ...]
     for heading_index, heading in enumerate(headings):
         next_heading = headings[heading_index + 1] if heading_index + 1 < len(headings) else None
         final_page_index = next_heading.page_index if next_heading else last_notes_page
+        if next_heading is None and tail_boundary:
+            final_page_index = min(final_page_index, tail_boundary[0])
         sections: list[ExtractedSection] = []
 
         for page_index in range(heading.page_index, final_page_index + 1):
@@ -332,8 +376,12 @@ def extract_notes_from_pages(page_texts: list[str]) -> tuple[ExtractedNote, ...]
             end_offset = len(page_texts[page_index])
             if next_heading and page_index == next_heading.page_index:
                 end_offset = next_heading.start_offset
-            appendix_heading = None if next_heading else APPENDIX_HEADING_RE.search(
-                page_texts[page_index], start_offset
+            if next_heading is None and tail_boundary and page_index == tail_boundary[0]:
+                end_offset = min(end_offset, tail_boundary[1])
+            appendix_heading = (
+                None
+                if next_heading
+                else APPENDIX_HEADING_RE.search(page_texts[page_index], start_offset)
             )
             if appendix_heading:
                 end_offset = appendix_heading.start()
@@ -367,6 +415,10 @@ def extract_notes_from_pages(page_texts: list[str]) -> tuple[ExtractedNote, ...]
     return tuple(notes)
 
 
+def extract_notes_from_pages(page_texts: list[str]) -> tuple[ExtractedNote, ...]:
+    return _extract_notes_from_headings(page_texts, find_note_headings(page_texts))
+
+
 def extract_notes_from_pdf(pdf_bytes: bytes, identity_tokens: tuple[str, ...]) -> ExtractionResult:
     if not pdf_bytes.startswith(b"%PDF"):
         raise ValueError("La fuente no devolvió un PDF válido")
@@ -378,8 +430,14 @@ def extract_notes_from_pdf(pdf_bytes: bytes, identity_tokens: tuple[str, ...]) -
     missing_tokens = [token for token in identity_tokens if _normalized(token) not in document_text]
     if missing_tokens:
         raise ValueError(f"El PDF no coincide con la fuente esperada: {missing_tokens}")
-    notes = extract_notes_from_pages(page_texts)
-    return ExtractionResult(page_count=len(reader.pages), notes=notes)
+    parsed = _parse_note_headings(page_texts)
+    notes = _extract_notes_from_headings(page_texts, parsed.headings, parsed.tail_boundary)
+    return ExtractionResult(
+        page_count=len(reader.pages),
+        notes=notes,
+        extraction_status="warning" if parsed.warning else "extracted",
+        warning=parsed.warning,
+    )
 
 
 def download_pdf(source_url: str, *, timeout_seconds: float, max_bytes: int) -> bytes:
@@ -464,7 +522,7 @@ def store_note_document(
                 note_source_id, company_id, fiscal_year, period_code, scope,
                 version, document_name, source_url, source_sha256,
                 file_size_bytes, page_count, notes_count, extraction_status
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'extracted')
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -480,6 +538,7 @@ def store_note_document(
                 len(pdf_bytes),
                 extraction.page_count,
                 len(extraction.notes),
+                extraction.extraction_status,
             ),
         )
         document_id = cursor.fetchone()["id"]
@@ -490,7 +549,7 @@ def store_note_document(
                 INSERT INTO financial_notes (
                     note_document_id, note_number, original_title, topic, is_priority,
                     start_page, end_page, content_text, extraction_status
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'extracted')
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -502,6 +561,7 @@ def store_note_document(
                     note.start_page,
                     note.end_page,
                     note.content_text,
+                    extraction.extraction_status,
                 ),
             )
             note_id = cursor.fetchone()["id"]
@@ -544,5 +604,7 @@ def store_note_document(
         "version": next_version,
         "notes_count": len(extraction.notes),
         "page_count": extraction.page_count,
+        "extraction_status": extraction.extraction_status,
+        "warning": extraction.warning,
         "source_sha256": digest,
     }

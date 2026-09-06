@@ -58,6 +58,7 @@ export default async function NotesPage({
       <div><span>✓</span><p><b>{data.document.document_name}</b><small>{data.document.page_count} páginas · versión {data.document.version} · extracción referenciada</small></p></div>
       <div className="note-source-actions"><Link href={`/empresas/${smvRpj}/notas/comparar?currentYear=${year}&scope=${scope}`}>Comparar notas {year} vs. {year - 1} →</Link><a href={data.document.source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a></div>
     </section>
+    {data.document.extraction_status === "warning" && <section className="notes-extraction-warning" role="status"><b>Extracción parcial</b><p>Estas son las notas que el sistema pudo segmentar y referenciar con seguridad. El documento completo sigue disponible para verificar las secciones pendientes.</p></section>}
 
     <form className="notes-filters" action={`/empresas/${smvRpj}/notas`} method="get">
       <input type="hidden" name="year" value={year} />
