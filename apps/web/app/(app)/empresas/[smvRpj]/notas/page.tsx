@@ -60,6 +60,8 @@ export default async function NotesPage({
     </section>
     {data.document.extraction_status === "warning" && <section className="notes-extraction-warning" role="status"><b>Extracción parcial</b><p>Estas son las notas que el sistema pudo segmentar y referenciar con seguridad. El documento completo sigue disponible para verificar las secciones pendientes.</p></section>}
 
+    <section className="note-source-bar"><div><span>↗</span><p><b>Informe de notas con IA</b><small>Riesgos, alertas y cambios interanuales con evidencia del documento.</small></p></div><div className="note-source-actions"><Link href={`/empresas/${smvRpj}/notas/informe?${coverageQuery}`}>Ver informe de notas →</Link></div></section>
+
     <form className="notes-filters" action={`/empresas/${smvRpj}/notas`} method="get">
       <input type="hidden" name="year" value={year} />
       <input type="hidden" name="scope" value={scope} />

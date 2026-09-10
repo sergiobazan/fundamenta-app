@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     analysis_worker_max_attempts: int = 3
     analysis_documents_timeout_seconds: float = Field(default=180, gt=0, le=900)
     analysis_active_jobs_per_user: int = 3
+    nvidia_api_key: SecretStr = SecretStr("")
+    nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
+    nvidia_model: str = "deepseek-ai/deepseek-v4-pro-0813"
+    notes_report_worker_enabled: bool = True
+    notes_report_timeout_seconds: float = Field(default=300, gt=0, le=600)
+    notes_report_max_input_chars: int = Field(default=500_000, ge=1000, le=1_000_000)
+    notes_report_max_output_tokens: int = Field(default=16000, ge=1000, le=32000)
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

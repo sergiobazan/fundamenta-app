@@ -1,0 +1,26 @@
+.ai-report { max-width: 1380px; }
+.ai-report-intro { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:26px; background:#e7f1e9; border-left:3px solid #24745b; margin-bottom:24px; }
+.ai-report h2 { font-size:22px; margin:10px 0; }
+.ai-report p, .ai-report li { font-size:14px; line-height:1.7; }
+.ai-report button { border:1px solid #24745b; border-radius:8px; padding:12px 18px; background:#24745b; color:white; cursor:pointer; font:inherit; }
+.ai-report button:disabled { opacity:.6; cursor:wait; }
+.ai-report button:focus-visible, .ai-report summary:focus-visible { outline:3px solid #4e87b5; outline-offset:3px; }
+.ai-report-notice { background:#fff7e9; border-left:3px solid #b78335; padding:18px; margin:16px 0; }
+.ai-report-coverage { padding:24px; border:1px solid #deddd4; border-radius:12px; margin:24px 0; background:#fffefa; }
+.ai-report-coverage a { display:block; font-size:13px; margin-top:10px; color:#24745b; text-decoration:underline; }
+.ai-report-filters { display:flex; flex-wrap:wrap; gap:10px; margin:24px 0; }
+.ai-report-filters button { background:transparent; color:#24745b; }
+.ai-report-filters button[aria-pressed="true"] { background:#24745b; color:white; }
+.ai-report-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.ai-finding { background:#fffefa; border:1px solid #deddd4; border-top:3px solid #7c9688; border-radius:12px; padding:24px; overflow-wrap:anywhere; }
+.ai-finding-high { border-top-color:#b46943; }
+.ai-finding-medium { border-top-color:#b49449; }
+.ai-finding h3 { font-size:12px; margin:22px 0 6px; }
+.ai-finding details { border-top:1px solid #deddd4; margin-top:22px; padding-top:16px; }
+.ai-finding summary { cursor:pointer; font-size:13px; font-weight:600; }
+.ai-finding figure { margin:16px 0; background:#f4f2e9; padding:16px; border-radius:8px; }
+.ai-finding blockquote { margin:0 0 12px; font-size:13px; line-height:1.7; white-space:pre-wrap; }
+.ai-finding figcaption { color:#24745b; font-size:12px; text-decoration:underline; }
+.ai-finding-question { border-top:1px solid #deddd4; margin-top:20px; }
+.ai-report-meta { color:#727b75; font-size:12px!important; }
+@media(max-width:800px) { .ai-report-grid { grid-template-columns:1fr; } .ai-report-intro { flex-direction:column; align-items:flex-start; } }

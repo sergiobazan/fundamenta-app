@@ -22,6 +22,8 @@ from app.config import get_settings, get_upload_dir
 from app.db import connect
 from app.document_search import search_source_fragments
 from app.narrative_comparisons import fetch_narrative_comparison
+from app.notes_reports import router as notes_report_router
+from app.notes_reports import run_report_worker
 
 NoteTopic = Literal[
     "debt",
@@ -56,6 +58,15 @@ async def lifespan(_app: FastAPI):
     settings = get_settings()
     stop_event = Event()
     worker = None
+    report_worker = None
+    if settings.notes_report_worker_enabled:
+        report_worker = Thread(
+            target=run_report_worker,
+            args=(stop_event, settings),
+            name="notes-report-worker",
+            daemon=True,
+        )
+        report_worker.start()
     if settings.analysis_worker_enabled:
         worker = Thread(
             target=run_analysis_worker,
@@ -70,10 +81,13 @@ async def lifespan(_app: FastAPI):
         stop_event.set()
         if worker is not None:
             worker.join(timeout=min(settings.analysis_worker_poll_seconds + 1, 10))
+        if report_worker is not None:
+            report_worker.join(timeout=1)
 
 
 app = FastAPI(title="Fundamenta API", version="0.3.0", lifespan=lifespan)
 app.include_router(auth_router)
+app.include_router(notes_report_router)
 
 upload_dir = get_upload_dir()
 upload_dir.mkdir(parents=True, exist_ok=True)

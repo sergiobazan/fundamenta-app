@@ -252,3 +252,48 @@ npm run build
 - Configurar HTTPS, dominio, correo real, dirección real y Google Analytics.
 - Conseguir y autorizar reseñas reales; el MVP no inventa testimonios.
 - Reemplazar las credenciales demo en cualquier ambiente público.
+## Informe de notas con NVIDIA
+
+**Modo priorizado actual (`notes-priority-v4`):** selecciona hasta 20 notas del ejercicio
+y 12 del anterior, priorizando deuda, contingencias, vinculadas, deterioro y otros riesgos.
+Relega notas introductorias y políticas genéricas, salvo señales de cambios o riesgos concretos.
+Envía un fragmento por nota, máximo 2500 caracteres cada uno (75000 en total), y solicita
+hasta doce hallazgos sustentados. Conserva la validación de citas y exige ambos ejercicios
+para publicar cambios. Muestra la cobertura limitada; no es un informe exhaustivo.
+La nueva versión permite actualizar los informes de prueba anteriores.
+
+El informe con IA se solicita desde **Empresa → Notas → Ver informe de notas**.
+Incluye riesgos, contexto y cambios interanuales con referencias; no sustituye una auditoría.
+
+Configuración del **backend** (archivo `.env` local o variables del servicio en Render):
+
+```dotenv
+NVIDIA_API_KEY=
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+NVIDIA_MODEL=deepseek-ai/deepseek-v4-pro-0813
+```
+
+Completa únicamente la clave y reinicia el backend. Nunca la pongas en Vercel,
+`NEXT_PUBLIC_*`, código fuente o Git. No se necesita instalar un SDK adicional.
+La migración `018_notes_reports.sql` se aplica con el arranque normal de `app.runtime api`.
+El worker de informes arranca dentro de la API; `NOTES_REPORT_WORKER_ENABLED=false`
+lo desactiva. No depende del worker de estados financieros.
+
+Los endpoints autenticados `GET/POST /companies/{smv_rpj}/notes-report` consultan/encolan
+el informe (`year` y `scope`). El POST devuelve inmediatamente; el navegador sólo consulta
+el estado. Las fuentes se guardan como instantánea y las respuestas se reutilizan por
+huella de documentos y fragmentos, modelo y prompt. Una fuente actualizada permite
+generar una nueva versión. No se generan informes automáticamente al visitar la página.
+
+Hay tres intentos automáticos para fallos temporales y hasta dos ciclos manuales de
+reintento tras corregir configuración. Los errores no exponen respuestas del proveedor,
+claves ni razonamiento interno. Un reinicio del servicio recupera trabajos cuyo plazo de
+ejecución expiró (15 minutos). Un servicio suspendido no puede ejecutar trabajos hasta
+reactivarse; para continuidad operativa utiliza una instancia siempre activa.
+
+Variables opcionales: `NOTES_REPORT_TIMEOUT_SECONDS=300` (máximo 600 por intento),
+`NOTES_REPORT_MAX_INPUT_CHARS=500000`, `NOTES_REPORT_MAX_OUTPUT_TOKENS=16000`.
+Las entradas que superan el límite no se recortan; el sistema explica el bloqueo.
+Las citas se validan literalmente, pero la correspondencia semántica de una interpretación
+requiere revisión humana. Antes de producción valida varios informes reales con los
+economistas y comprueba los límites y condiciones de tu acceso NVIDIA.

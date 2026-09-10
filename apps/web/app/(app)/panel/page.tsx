@@ -1,18 +1,225 @@
-import { MetricCard } from "@/components/MetricCard";
-import { API_URL } from "@/lib/backend";
-import type { Summary } from "@/lib/types";
+import Link from "next/link";
+import { EventTimeline } from "@/components/EventTimeline";
+import { getCompanies, getEvents } from "@/lib/financial";
+import { panelOverview } from "@/lib/panel";
+import "@/app/panel.css";
 
-const sourceUrl="https://buenaventura.com/wp-content/uploads/2026/04/Integrated-annual-report-2025_Buenaventura_ENG.pdf";
-const priority=['revenue_growth','net_margin','current_ratio','free_cash_flow','return_on_equity','debt_to_equity'];
+export const metadata = { title: "Panel de investigación" };
 
-async function getSummary():Promise<Summary>{const response=await fetch(`${API_URL}/companies/B20003/summary?year=2025&period=A&scope=consolidated`,{cache:'no-store'});if(!response.ok)throw new Error('No se pudo cargar el resumen financiero');return response.json()}
-
-export const metadata={title:'Resumen financiero'};
-export default async function Dashboard(){const summary=await getSummary();const metrics=priority.map(code=>summary.metrics.find(metric=>metric.metric_code===code)).filter(Boolean) as Summary['metrics'];return <>
-  <header className="app-header"><div><span className="overline">CASO PILOTO · DATOS REALES</span><h1>Resumen financiero</h1></div><div className="period-pill"><span>Periodo</span><b>2025 · Anual</b></div></header>
-  <section className="company-banner"><div className="company-mark">BVN</div><div><span>Compañía analizada</span><h2><a href={`/empresas/${summary.company.smv_rpj}`}>{summary.company.legal_name}</a></h2><p>Minería · Consolidado · USD en miles</p></div><div className="quality"><i></i><div><b>Datos verificados</b><span>7 de 7 controles aprobados</span></div></div></section>
-  <section className="notice"><span>i</span><p><b>Lectura, no veredicto.</b> Estos indicadores ayudan a formular preguntas. No constituyen una recomendación de compra, venta o mantenimiento.</p></section>
-  <section><div className="content-head"><div><h2>Indicadores clave</h2><p>Haz clic en cada fórmula para auditar los insumos.</p></div><a href={sourceUrl} target="_blank" rel="noreferrer">Documento fuente ↗</a></div><div className="metric-grid">{metrics.map((metric,index)=><MetricCard key={metric.metric_code} metric={metric} featured={index===0} sourceUrl={sourceUrl} sourceLabel="Reporte integrado 2025 de Buenaventura"/>)}</div></section>
-  <section className="questions"><div><span className="overline">SIGUIENTE LECTURA</span><h2>Preguntas que los números todavía no responden</h2></div><ol><li><b>01</b><span>¿Qué parte del crecimiento provino de precio, volumen o efectos no recurrentes?</span></li><li><b>02</b><span>¿Cómo cambia el flujo libre bajo un ciclo de precios de metales menos favorable?</span></li><li><b>03</b><span>¿Qué compromisos de capex y riesgos operativos aparecen en las notas?</span></li></ol><p className="metric-source">↗ Preguntas de investigación editorial; no son hechos extraídos ni recomendaciones.</p></section>
-  <footer className="data-footer"><span>Último cálculo: {new Intl.DateTimeFormat('es-PE',{dateStyle:'long',timeZone:'America/Lima'}).format(new Date(metrics[0].calculated_at))}</span><a href={sourceUrl} target="_blank" rel="noreferrer">Fuente primaria: Buenaventura, Reporte integrado 2025 ↗</a></footer>
-  </>}
+export default async function Dashboard() {
+  const [catalog, events] = await Promise.allSettled([
+    getCompanies(),
+    getEvents({ limit: 4 }),
+  ]);
+  const companies = catalog.status === "fulfilled" ? catalog.value : [];
+  const overview = panelOverview(companies);
+  const loaded = catalog.status === "fulfilled";
+  return (
+    <div className="research-panel">
+      <header className="app-header">
+        <div>
+          <span className="overline">
+            TU PUNTO DE PARTIDA · FUENTES OFICIALES
+          </span>
+          <h1>Panel de investigación</h1>
+          <p>
+            Explora empresas, contrasta sus cifras y profundiza en sus notas.
+          </p>
+        </div>
+        <Link className="panel-primary" href="/empresas">
+          Explorar empresas →
+        </Link>
+      </header>
+      <section className="panel-intro">
+        <div>
+          <span className="overline">CATÁLOGO SMV · ANÁLISIS BAJO DEMANDA</span>
+          <h2>Una empresa. Sus cifras. Las preguntas que importan.</h2>
+          <p>
+            Abre un análisis disponible o solicita uno para un emisor
+            compatible. Estados y métricas aparecen primero; la cobertura
+            documental depende de las fuentes oficiales disponibles.
+          </p>
+        </div>
+        <Link href="/empresas">Buscar por nombre, RUC o código SMV ↗</Link>
+      </section>
+      {!loaded && (
+        <p className="panel-alert" role="alert">
+          No pudimos consultar el catálogo. Los conteos no están disponibles;
+          recarga la página para reintentar.
+        </p>
+      )}
+      <section
+        className="panel-stats"
+        aria-label="Cobertura actual del catálogo">
+        {[
+          [
+            companies.length,
+            "Emisores catalogados",
+            "No todos están dentro del alcance del MVP",
+          ],
+          [
+            overview.compatible,
+            "Compatibles con el MVP",
+            "Minería y otros emisores no financieros",
+          ],
+          [
+            overview.available.length,
+            "Análisis disponibles",
+            "Disponibilidad no equivale a revisión humana",
+          ],
+          [
+            overview.active.length,
+            "Análisis en curso",
+            "Trabajos del catálogo, no sólo de tu cuenta",
+          ],
+        ].map(([count, label, detail]) => (
+          <article key={String(label)}>
+            <span>{label}</span>
+            <strong>{loaded ? count : "—"}</strong>
+            <small>{detail}</small>
+          </article>
+        ))}
+      </section>
+      <section className="company-section">
+        <div className="content-head">
+          <div>
+            <span className="overline">COMIENZA CON DATOS DISPONIBLES</span>
+            <h2>Empresas para explorar</h2>
+            <p>
+              Ordenadas por fecha de finalización. No es un ranking de
+              inversión.
+            </p>
+          </div>
+          <Link href="/empresas">Ver catálogo completo ↗</Link>
+        </div>
+        <div className="panel-company-grid">
+          {overview.available.slice(0, 6).map((company) => (
+            <Link
+              className="panel-company"
+              key={company.smv_rpj}
+              href={`/empresas/${company.smv_rpj}`}>
+              <span className="overline">
+                {company.sector || "Sector sin clasificar"}
+              </span>
+              <h3>{company.legal_name}</h3>
+              <p>
+                SMV {company.smv_rpj} ·{" "}
+                {company.latest_fiscal_year ?? "Periodo por consultar"}
+                {company.preferred_scope
+                  ? ` · ${company.preferred_scope === "consolidated" ? "Consolidado" : "Individual"}`
+                  : ""}
+              </p>
+              <div>
+                <span>
+                  {company.validation_tier === "verified"
+                    ? "Revisión manual registrada"
+                    : "Validación automática"}
+                </span>
+                <b>Ver análisis →</b>
+              </div>
+            </Link>
+          ))}
+        </div>
+        {loaded && !overview.available.length && (
+          <p className="panel-empty">
+            Todavía no hay análisis completos disponibles. En el catálogo puedes
+            consultar avances o solicitar un análisis compatible.
+          </p>
+        )}
+      </section>
+      {(overview.active.length > 0 || overview.attention > 0) && (
+        <section className="panel-progress">
+          <h2>Estado de los análisis</h2>
+          {overview.active.slice(0, 4).map((company) => (
+            <Link key={company.smv_rpj} href={`/empresas/${company.smv_rpj}`}>
+              <b>{company.legal_name}</b>
+              <span>
+                {company.job_status === "queued" ||
+                company.analysis_status === "queued"
+                  ? "En cola"
+                  : company.job_status === "retrying"
+                    ? "Reintentando"
+                    : "En proceso"}{" "}
+                · Consultar avance →
+              </span>
+            </Link>
+          ))}
+          {overview.attention > 0 && (
+            <p>
+              {overview.attention} empresas tienen análisis parciales,
+              pendientes de revisión o con errores.{" "}
+              <Link href="/empresas">Revisar en el catálogo ↗</Link>
+            </p>
+          )}
+          <small>
+            Estado consultado al abrir esta página. Abre una empresa para seguir
+            su progreso.
+          </small>
+        </section>
+      )}
+      <section className="company-section">
+        <div className="content-head">
+          <div>
+            <span className="overline">DE LAS CIFRAS AL CONTEXTO</span>
+            <h2>Herramientas para tu siguiente pregunta</h2>
+          </div>
+        </div>
+        <div className="panel-tools">
+          <Link href="/comparador">
+            <span>01 · COMPARAR</span>
+            <h3>¿Qué cambió y frente a quién?</h3>
+            <p>
+              Compara empresas con datos compatibles. Desde cada empresa,
+              contrasta métricas y estados con el ejercicio anterior.
+            </p>
+            <b>Abrir comparador →</b>
+          </Link>
+          <Link href="/buscar">
+            <span>02 · ENCONTRAR EVIDENCIA</span>
+            <h3>¿Dónde lo dice el documento?</h3>
+            <p>
+              Busca en el texto oficial indexado y consulta sus referencias por
+              página. La cobertura varía por empresa.
+            </p>
+            <b>Buscar en documentos →</b>
+          </Link>
+          <Link href="/empresas">
+            <span>03 · INFORME DE NOTAS CON IA</span>
+            <h3>¿Qué merece una lectura más profunda?</h3>
+            <p>
+              Desde Empresa → Notas, solicita riesgos y cambios sustentados. El
+              informe analiza una selección priorizada, no todas las notas, y
+              requiere revisión humana.
+            </p>
+            <b>Elegir empresa →</b>
+          </Link>
+        </div>
+      </section>
+      <section className="company-section">
+        <div className="content-head">
+          <div>
+            <span className="overline">CONTEXTO OFICIAL</span>
+            <h2>Eventos del catálogo</h2>
+            <p>
+              Últimos eventos registrados; no es un servicio de noticias en
+              tiempo real.
+            </p>
+          </div>
+          <Link href="/eventos">Ver eventos ↗</Link>
+        </div>
+        {events.status === "fulfilled" ? (
+          <EventTimeline events={events.value} compact />
+        ) : (
+          <p className="panel-empty">
+            Los eventos no están disponibles en este momento.
+          </p>
+        )}
+      </section>
+      <footer className="data-footer">
+        La SMV es la fuente primordial. Verifica periodo, alcance y escala; las
+        alertas y el contenido de IA no constituyen recomendaciones de
+        inversión.
+      </footer>
+    </div>
+  );
+}

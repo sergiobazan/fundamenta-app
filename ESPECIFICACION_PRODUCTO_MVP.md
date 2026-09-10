@@ -729,8 +729,24 @@ de exactitud o trazabilidad:
 5. **Analítica y validación con usuarios.** Medir búsquedas, solicitudes, tiempos,
    aperturas de análisis parciales y disposición a pagar.
 6. **Completar eventos y alertas.** Ampliar fuentes oficiales, actualización y avisos.
-7. **Asistente con abstención y trazabilidad usando NVIDIA.** Sólo después de validar
-   cobertura, calidad y uso real; nunca se usará para calcular cifras financieras.
+7. **Informe de notas con abstención y trazabilidad usando NVIDIA, antes del chat.**
+   Bajo demanda, para cualquier empresa con notas oficiales extraídas. Modelo inicial:
+   `deepseek-ai/deepseek-v4-pro-0813`, endpoint `https://integrate.api.nvidia.com/v1`.
+   Prioriza riesgos y alertas; compara ejercicios sólo con evidencia de ambos años y
+   del mismo alcance. Separa hechos, interpretación de IA y preguntas de investigación.
+   Cada hallazgo incluye citas literales cotejadas, nota, página y enlace oficial.
+   No calcula cifras, no infiere escalas, no recomienda inversiones ni equipara ausencia
+   de hallazgos con ausencia de riesgos. La validación literal no certifica la interpretación.
+   Cola persistente independiente de los estados financieros; máximo tres intentos
+   automáticos con espera, timeout total de 300 segundos por intento (configurable hasta
+   600), recuperación de ejecuciones interrumpidas tras 15 minutos y dos reintentos
+   manuales de ciclo como máximo. Cuota de diez informes nuevos diarios o activos por
+   usuario. Reutiliza resultados por huella de fuentes, modelo y versión del prompt;
+   señala informes desactualizados. No trunca fuentes silenciosamente: por encima de
+   500000 caracteres exige revisar el límite. La API key reside exclusivamente en backend.
+   La pantalla independiente muestra cobertura, extracción parcial, ausencia de año
+   previo, errores y filtros de riesgos/cambios/contexto. Antes de habilitarlo al piloto,
+   validar con NVIDIA real y revisión de economistas sobre varias empresas.
 8. **Pendientes post-MVP.** Incluye reconstrucción de tablas de notas y mejoras que no
    bloquean el piloto.
 
