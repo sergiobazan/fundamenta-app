@@ -30,7 +30,7 @@ export default async function StatementComparisonPage({ params, searchParams }: 
   return <>
     <nav className="app-breadcrumbs" aria-label="Migas de pan"><Link href="/empresas">Empresas</Link><span>/</span><Link href={`/empresas/${smvRpj}`}>{filing.legal_name}</Link><span>/</span><Link href={back}>{title}</Link><span>/</span><b>Comparar años</b></nav>
     <header className="statement-header"><div><span className="overline">COMPARACIÓN ANUAL · {title}</span><h1>{year} vs. {year - 1}</h1><p>{filing.legal_name} · {scope === "individual" ? "Individual" : "Consolidado"} · {filing.currency_code} · {scale}</p></div><Link className="document-button" href={back}>Volver al estado ←</Link></header>
-    {filing.scale_source_url && <a className="document-button" href={filing.scale_source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a>}
+    {filing.scale_source_url && <a data-activity="source" className="document-button" href={filing.scale_source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a>}
     <StatementTable facts={statement.facts} year={year} unverifiedScale={filing.reported_scale === "unknown"} compare />
   </>;
 }

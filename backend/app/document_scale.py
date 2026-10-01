@@ -19,7 +19,7 @@ import httpx
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-from app.notes import NoteSourceConfig, _normalized, extract_notes_from_pdf
+from app.notes import NoteSourceConfig, _normalized, extract_note_document_from_pages
 
 TITLES = {
     "balance_sheet": r"estado(?:s)? (?:consolidado[s]? de |de )situacion financiera",
@@ -96,13 +96,22 @@ def discover_pdfs(page_url: str, hosts: set[str], year: int, timeout: float) -> 
     )[:12]
 
 
-def read_pages(data: bytes) -> list[str]:
+def read_pages(
+    data: bytes, *, name: str | None = None, year: int | None = None,
+    scope: str | None = None,
+) -> list[str]:
     if not data.startswith(b"%PDF"):
         raise ValueError("La fuente no devolvió un PDF")
     reader = PdfReader(io.BytesIO(data))
     if reader.is_encrypted or len(reader.pages) > 350:
         raise ValueError("PDF cifrado o demasiado extenso")
-    return [page.extract_text() or "" for page in reader.pages]
+    pages = [page.extract_text() or "" for page in reader.pages[:3]]
+    # Reject unrelated candidates before extracting the entire document.
+    # Keep the cover text so accepted PDFs are read only once.
+    if name is not None and not document_identity(pages, name, year, scope):
+        return []
+    pages.extend(page.extract_text() or "" for page in reader.pages[3:])
+    return pages
 
 
 def document_identity(pages: list[str], name: str, year: int, scope: str) -> bool:
@@ -307,8 +316,10 @@ def verify_company_scales(connection, job: dict, settings, report=None) -> dict:
             report(72 + min(index, 8), f"Descargando documento oficial: {url}")
             data = fetch_official(url, hosts, settings.notes_max_pdf_bytes, 30)
             report(72 + min(index, 8), f"Leyendo PDF y comprobando identidad: {url}")
-            pages = read_pages(data)
-            if not document_identity(pages, name, job["fiscal_year"], job["scope"]):
+            pages = read_pages(
+                data, name=name, year=job["fiscal_year"], scope=job["scope"],
+            )
+            if not pages:
                 continue
             from app.notes_scale import verify_notes_policy
 
@@ -333,7 +344,7 @@ def verify_company_scales(connection, job: dict, settings, report=None) -> dict:
                 report(72 + min(index, 8), f"Extrayendo notas: {url}")
                 tokens = (name, str(job["fiscal_year"]), "Notas a los estados financieros")
                 try:
-                    extraction = extract_notes_from_pdf(data, tokens)
+                    extraction = extract_note_document_from_pages(pages, tokens)
                 except ValueError as error:
                     errors.append(str(error)[:250])
                 else:

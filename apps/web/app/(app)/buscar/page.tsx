@@ -86,7 +86,7 @@ export default async function DocumentSearchPage({
         <p className="fragment-excerpt">{fragment.excerpt}</p>
         <div className="fragment-trace">
           <span>Versión {fragment.document_version} · SHA-256 verificada</span>
-          <div><Link href={`/empresas/${fragment.smv_rpj}/notas/${fragment.note_number}?year=${fragment.fiscal_year}&period=${fragment.period_code}&scope=${fragment.scope}`}>Leer nota completa</Link><a href={`${fragment.source_url}#page=${fragment.page_number}`} target="_blank" rel="noreferrer">Ver página en PDF ↗</a></div>
+          <div><Link href={`/empresas/${fragment.smv_rpj}/notas/${fragment.note_number}?year=${fragment.fiscal_year}&period=${fragment.period_code}&scope=${fragment.scope}`}>Leer nota completa</Link><a data-activity="source" data-company={fragment.smv_rpj} href={`${fragment.source_url}#page=${fragment.page_number}`} target="_blank" rel="noreferrer">Ver página en PDF ↗</a></div>
         </div>
       </article>)}
       {data.total > pageSize && <nav className="search-pagination" aria-label="Paginación de resultados">

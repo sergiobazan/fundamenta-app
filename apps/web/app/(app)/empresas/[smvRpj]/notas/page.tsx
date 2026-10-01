@@ -56,9 +56,12 @@ export default async function NotesPage({
 
     <section className="note-source-bar">
       <div><span>✓</span><p><b>{data.document.document_name}</b><small>{data.document.page_count} páginas · versión {data.document.version} · extracción referenciada</small></p></div>
-      <div className="note-source-actions"><Link href={`/empresas/${smvRpj}/notas/comparar?currentYear=${year}&scope=${scope}`}>Comparar notas {year} vs. {year - 1} →</Link><a href={data.document.source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a></div>
+      <div className="note-source-actions"><Link href={`/empresas/${smvRpj}/notas/comparar?currentYear=${year}&scope=${scope}`}>Comparar notas {year} vs. {year - 1} →</Link><a data-activity="source" href={data.document.source_url} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a></div>
     </section>
-    {data.document.extraction_status === "warning" && <section className="notes-extraction-warning" role="status"><b>Extracción parcial</b><p>Estas son las notas que el sistema pudo segmentar y referenciar con seguridad. El documento completo sigue disponible para verificar las secciones pendientes.</p></section>}
+    <p className="data-footer">{data.document.extraction_quality?.coverage_checked_against_index
+      ? `${data.document.notes_count} de ${data.document.extraction_quality.expected_notes} notas con encabezados contrastados con el índice. Las tablas conservan su formato original en el PDF.`
+      : "Notas segmentadas automáticamente. La cobertura total no ha sido contrastada con un índice; consulta el PDF original para comprobarla."}</p>
+    {data.document.extraction_status === "warning" && <section className="notes-extraction-warning" role="status"><b>Extracción parcial</b><p>{data.document.extraction_quality?.warning || "Hay secciones pendientes de revisión. Consulta el documento original para verificar la cobertura."}</p></section>}
 
     <section className="note-source-bar"><div><span>↗</span><p><b>Informe de notas con IA</b><small>Riesgos, alertas y cambios interanuales con evidencia del documento.</small></p></div><div className="note-source-actions"><Link href={`/empresas/${smvRpj}/notas/informe?${coverageQuery}`}>Ver informe de notas →</Link></div></section>
 

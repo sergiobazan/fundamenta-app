@@ -1,7 +1,28 @@
 from decimal import Decimal
+from unittest.mock import MagicMock
 
+import pytest
 from app.company_analysis import classify_support, merge_catalog_rows
 from app.smv.client import SmvResponse
+
+
+@pytest.mark.parametrize("attempt,status", [(1, "retrying"), (3, "failed")])
+def test_document_timeout_message_matches_retry_state(attempt, status):
+    from app.company_analysis import _mark_failed
+
+    connection = MagicMock()
+    job = {"id": 5, "company_id": 10, "attempts": attempt, "max_attempts": 3}
+    assert _mark_failed(connection, job, TimeoutError(
+        "La etapa documental superó su tiempo máximo"
+    )) == status
+    calls = connection.cursor.return_value.__enter__.return_value.execute.call_args_list
+    job_values = calls[0].args[1]
+    message = job_values[3]
+    assert (job_values[1] is not None) == (status == "retrying")
+    assert ("Se reintentará" in message) == (status == "retrying")
+    assert ("Se agotaron" in message) == (status == "failed")
+    assert calls[1].args[1][0] == message
+    assert calls[2].args[1][1] == message
 
 
 def response(rows: list[dict]) -> SmvResponse:

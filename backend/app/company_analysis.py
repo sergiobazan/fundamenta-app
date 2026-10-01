@@ -8,6 +8,7 @@ from typing import Any
 
 from psycopg import Connection
 
+from app.activity import record_activity
 from app.cited_summaries import sync_cited_summaries
 from app.config import Settings, get_settings
 from app.db import connect
@@ -71,9 +72,7 @@ def classify_support(company: dict[str, Any]) -> str:
         return "full"
     if any(hint in searchable for hint in MINING_HINTS):
         return "full"
-    if ciiu.startswith(("64", "65", "66")) or any(
-        hint in searchable for hint in FINANCIAL_HINTS
-    ):
+    if ciiu.startswith(("64", "65", "66")) or any(hint in searchable for hint in FINANCIAL_HINTS):
         return "unsupported"
     return "basic"
 
@@ -108,9 +107,7 @@ def merge_catalog_rows(
         company["available_scopes"] = sorted(
             scopes, key=lambda item: (item != "consolidated", item)
         )
-        company["preferred_scope"] = (
-            "consolidated" if "consolidated" in scopes else "individual"
-        )
+        company["preferred_scope"] = "consolidated" if "consolidated" in scopes else "individual"
         company["support_level"] = classify_support(company)
         result.append(company)
     return sorted(result, key=lambda item: normalize_text(item["legal_name"]).lower())
@@ -358,6 +355,17 @@ def request_company_analysis(
         if active is not None:
             result = get_company_analysis(connection, smv_rpj)
             assert result is not None
+            record_activity(
+                connection,
+                user_id=user_id,
+                action="analysis.request",
+                outcome="reused",
+                resource_type="analysis",
+                resource_id=active["id"],
+                company_rpj=smv_rpj,
+                fiscal_year=fiscal_year,
+                scope=selected_scope,
+            )
             return result, True
 
         cursor.execute(
@@ -405,6 +413,17 @@ def request_company_analysis(
 
     result = get_company_analysis(connection, smv_rpj)
     assert result is not None
+    record_activity(
+        connection,
+        user_id=user_id,
+        action="analysis.request",
+        outcome="created",
+        resource_type="analysis",
+        resource_id=job_id,
+        company_rpj=smv_rpj,
+        fiscal_year=fiscal_year,
+        scope=selected_scope,
+    )
     return result, False
 
 
@@ -563,8 +582,14 @@ def _scale_context(
             ORDER BY updated_at DESC
             LIMIT 1
             """,
-            (job["company_id"], job["fiscal_year"], job["period_code"], job["scope"],
-             statement_type, payload_sha256),
+            (
+                job["company_id"],
+                job["fiscal_year"],
+                job["period_code"],
+                job["scope"],
+                statement_type,
+                payload_sha256,
+            ),
         )
         filing = cursor.fetchone()
         if filing is not None:
@@ -609,9 +634,7 @@ def _process_statements(settings: Settings, job: dict[str, Any]) -> dict[str, An
         if validation["status"] == "failed"
     ]
     if failed:
-        raise AnalysisReviewRequiredError(
-            f"{len(failed)} validaciones críticas requieren revisión"
-        )
+        raise AnalysisReviewRequiredError(f"{len(failed)} validaciones críticas requieren revisión")
     return {"statements": len(stored), "facts": sum(item["facts"] for item in stored)}
 
 
@@ -636,12 +659,14 @@ def _process_documents(settings: Settings, job: dict[str, Any]) -> dict[str, Any
     from app.document_scale import verify_company_scales
 
     with connect() as connection:
+
         def report(progress, message):
             logger.info("Análisis %s · %s: %s", job["id"], progress, message)
             with connect() as progress_connection:
                 progress_connection.execute(
                     "UPDATE analysis_jobs SET progress=%s, updated_at=NOW() "
-                    "WHERE id=%s AND status='running'", (progress, job["id"]),
+                    "WHERE id=%s AND status='running'",
+                    (progress, job["id"]),
                 )
                 progress_connection.execute(
                     "UPDATE analysis_job_steps SET details=%s::jsonb, updated_at=NOW() "
@@ -653,13 +678,19 @@ def _process_documents(settings: Settings, job: dict[str, Any]) -> dict[str, Any
         scale_result = verify_company_scales(connection, job, settings, report=report)
         # Also reconcile evidence committed by a previous interrupted attempt.
         calculate_and_store_metrics(
-            connection, job["smv_rpj"], job["fiscal_year"],
-            job["period_code"], job["scope"],
+            connection,
+            job["smv_rpj"],
+            job["fiscal_year"],
+            job["period_code"],
+            job["scope"],
         )
         connection.commit()
     if scale_result.get("documents"):
-        return {"available": True, "documents": scale_result["documents"],
-                "scale_verification": scale_result}
+        return {
+            "available": True,
+            "documents": scale_result["documents"],
+            "scale_verification": scale_result,
+        }
     with connect() as connection, connection.cursor() as cursor:
         cursor.execute(
             """
@@ -680,8 +711,11 @@ def _process_documents(settings: Settings, job: dict[str, Any]) -> dict[str, Any
         )
         sources = list(cursor.fetchall())
     if not sources:
-        return {"available": False, "reason": "No existe una fuente documental verificada",
-                "scale_verification": scale_result}
+        return {
+            "available": False,
+            "reason": "No existe una fuente documental verificada",
+            "scale_verification": scale_result,
+        }
 
     documents = []
     for source in sources:
@@ -767,6 +801,13 @@ def _mark_failed(connection: Connection, job: dict[str, Any], error: Exception) 
     exhausted = job["attempts"] >= job["max_attempts"]
     status = "failed" if exhausted else "retrying"
     next_retry_at = None if exhausted else datetime.now(UTC) + _retry_delay(job["attempts"])
+    message = str(error)
+    if isinstance(error, TimeoutError):
+        message += (
+            ". Se agotaron los intentos automáticos."
+            if exhausted
+            else ". Se reintentará automáticamente."
+        )
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -779,7 +820,7 @@ def _mark_failed(connection: Connection, job: dict[str, Any], error: Exception) 
                 status,
                 next_retry_at,
                 datetime.now(UTC) if exhausted else None,
-                str(error)[:1000],
+                message[:1000],
                 job["id"],
             ),
         )
@@ -789,7 +830,7 @@ def _mark_failed(connection: Connection, job: dict[str, Any], error: Exception) 
             SET status = 'failed', error_message = %s, completed_at = NOW(), updated_at = NOW()
             WHERE job_id = %s AND status = 'running'
             """,
-            (str(error)[:1000], job["id"]),
+            (message[:1000], job["id"]),
         )
         cursor.execute(
             """
@@ -797,7 +838,7 @@ def _mark_failed(connection: Connection, job: dict[str, Any], error: Exception) 
             SET analysis_status = %s, last_error = %s, updated_at = NOW()
             WHERE company_id = %s
             """,
-            ("failed" if exhausted else "queued", str(error)[:1000], job["company_id"]),
+            ("failed" if exhausted else "queued", message[:1000], job["company_id"]),
         )
     return status
 
@@ -820,9 +861,7 @@ def process_next_analysis_job(settings: Settings) -> dict[str, Any] | None:
                 _start_step(connection, job["id"], "statements", 5)
                 connection.commit()
                 details = _process_statements(settings, job)
-                _finish_step(
-                    connection, job, "statements", details=details, progress=40
-                )
+                _finish_step(connection, job, "statements", details=details, progress=40)
                 connection.commit()
                 result["statements"] = details
 
@@ -840,10 +879,14 @@ def process_next_analysis_job(settings: Settings) -> dict[str, Any] | None:
                 connection.commit()
                 from app.bounded_task import run_bounded
 
-                logger.info("Análisis %s: iniciando proceso documental (límite %ss)",
-                            job["id"], settings.analysis_documents_timeout_seconds)
+                logger.info(
+                    "Análisis %s: iniciando proceso documental (límite %ss)",
+                    job["id"],
+                    settings.analysis_documents_timeout_seconds,
+                )
                 details = run_bounded(
-                    _process_documents, (settings, job),
+                    _process_documents,
+                    (settings, job),
                     settings.analysis_documents_timeout_seconds,
                 )
                 documents_available = bool(details["available"])
@@ -866,9 +909,7 @@ def process_next_analysis_job(settings: Settings) -> dict[str, Any] | None:
                 connection.commit()
                 if documents_available:
                     details = _process_summaries()
-                    _finish_step(
-                        connection, job, "summaries", details=details, progress=100
-                    )
+                    _finish_step(connection, job, "summaries", details=details, progress=100)
                 else:
                     details = {"reason": "La etapa documental todavía no está disponible"}
                     _finish_step(

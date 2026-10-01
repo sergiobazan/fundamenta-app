@@ -7,7 +7,7 @@ export function AnnualComparisonBanner({ title, year, scope, href, sourceUrl }: 
     <div><span aria-hidden="true">↔</span><p><b>{title}</b><small>{year} · {scope === "individual" ? "Individual" : "Consolidado"} · Comparación anual</small></p></div>
     <div className="note-source-actions">
       <Link href={href}>Comparar {year} vs. {year - 1} →</Link>
-      {sourceUrl && <a href={sourceUrl} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a>}
+      {sourceUrl && <a data-activity="source" href={sourceUrl} target="_blank" rel="noreferrer">Abrir PDF oficial ↗</a>}
     </div>
   </section>;
 }

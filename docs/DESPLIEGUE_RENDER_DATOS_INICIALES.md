@@ -8,7 +8,7 @@ No es necesario abrir una consola ni ejecutar comandos SQL después del desplieg
 La API ejecuta `app.runtime` antes de iniciar su proceso normal. Ese módulo:
 
 1. toma un bloqueo de PostgreSQL para que sólo una instancia inicialice la base;
-2. descubre y aplica en orden las diecisiete migraciones de `infra/postgres/init`;
+2. descubre y aplica en orden las veintidós migraciones de `infra/postgres/init`;
 3. registra cada migración y su SHA-256 en `schema_migrations`;
 4. comprueba si el corte inicial ya está completo;
 5. si falta información, descarga desde la SMV los tres tipos de estado financiero
@@ -102,3 +102,37 @@ normal de producción:
 PYTHONPATH=backend uv run python -m app.migrations
 PYTHONPATH=backend uv run python -m app.bootstrap
 ```
+
+
+## Pase del administrador de usuarios a producción
+
+1. Incluir backend, frontend y migraciones 019–022 en el mismo corte de código.
+   Desplegar primero la API y esperar que arranque correctamente. El comando existente
+   `python -m app.runtime api` aplica migraciones automáticamente, incluso cuando
+   `BOOTSTRAP_ON_START=false`; no ejecutar SQL manual ni modificar migraciones previas.
+2. Desplegar la aplicación Next.js. Mantener `API_URL` apuntando a la API productiva
+   y las variables públicas existentes. No se requieren variables nuevas para usuarios.
+3. El permiso concedido en local no se copia a producción. Si la cuenta ya existe pero
+   no es administradora, habilitarla desde el entorno del backend:
+
+```bash
+PYTHONPATH=backend /app/.venv/bin/python -m app.admin grant \
+  --email demo@fundamenta.pe \
+  --reason 'Habilitación del responsable administrativo en producción'
+```
+
+4. Verificar `/health`, login y `/admin`: resumen, listado, ficha e historial. Comprobar
+   que una cuenta normal recibe 403 al acceder a `/admin/users` en la API y no puede
+   realizar cambios. Probar suspensión/reactivación con una cuenta de prueba designada;
+   confirmar revocación de sesiones y auditoría. No usar la cuenta administradora
+   principal para la prueba de suspensión.
+5. Las API keys se configuran únicamente como secretos del backend. `.env` no se
+   publica y `.env.example` conserva el valor vacío. El modelo NVIDIA configurado y
+   su disponibilidad son independientes del administrador; el cambio de clave local
+   no actualiza las variables de Render. La generación con NVIDIA sigue pendiente
+   de una respuesta real exitosa en las pruebas de esta tarea.
+
+La migración no concede permisos nuevos a cuentas existentes ni suspende usuarios.
+La fecha de instrumentación se registra en cada entorno. El historial antiguo se
+limita a solicitudes y auditoría guardadas; no reconstruye navegación anterior.
+Las pruebas de esquemas temporales no deben ejecutarse contra producción.

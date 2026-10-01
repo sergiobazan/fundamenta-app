@@ -212,8 +212,18 @@ Siete.
     assert isinstance(result, ExtractionResult)
     assert result.extraction_status == "warning"
     assert result.warning
-    assert [note.note_number for note in result.notes] == [1, 2, 3, 4, 5]
+    assert [note.note_number for note in result.notes] == [1, 2, 3, 4]
     assert "Séptima" not in result.notes[-1].content_text
+
+    from app.notes import extract_note_document_from_pages
+
+    def unexpected_pdf_read(*args):
+        raise AssertionError("Already extracted pages must not reopen the PDF")
+
+    monkeypatch.setattr("app.notes.PdfReader", unexpected_pdf_read)
+    assert extract_note_document_from_pages([page], ("Empresa S.A.", "2025")) == result
+    with pytest.raises(ValueError, match="no coincide"):
+        extract_note_document_from_pages([page], ("Otra Empresa S.A.", "2025"))
 
 
 def test_stops_the_last_note_before_a_supplementary_appendix() -> None:

@@ -22,7 +22,7 @@ def run_bounded(function, args, timeout):
         process.start()
         sender.close()
         if not receiver.poll(timeout):
-            raise TimeoutError("La etapa documental superó su tiempo máximo; se reintentará")
+            raise TimeoutError("La etapa documental superó su tiempo máximo")
         try:
             success, result = receiver.recv()
         except EOFError as error:

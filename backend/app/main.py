@@ -7,6 +7,8 @@ from fastapi import FastAPI, HTTPException, Query, Response, status
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from app.activity_api import router as activity_router
+from app.admin import router as admin_router
 from app.auth import current_user_dependency
 from app.auth import router as auth_router
 from app.cited_summaries import fetch_cited_summary
@@ -24,6 +26,7 @@ from app.document_search import search_source_fragments
 from app.narrative_comparisons import fetch_narrative_comparison
 from app.notes_reports import router as notes_report_router
 from app.notes_reports import run_report_worker
+from app.user_admin import router as user_admin_router
 
 NoteTopic = Literal[
     "debt",
@@ -87,6 +90,9 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(title="Fundamenta API", version="0.3.0", lifespan=lifespan)
 app.include_router(auth_router)
+app.include_router(admin_router)
+app.include_router(user_admin_router)
+app.include_router(activity_router)
 app.include_router(notes_report_router)
 
 upload_dir = get_upload_dir()
@@ -196,7 +202,7 @@ def corporate_events(
                 ce.source_document_name, ce.source_sha256, ce.retrieved_at
             FROM corporate_events ce
             JOIN companies c ON c.id = ce.company_id
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY ce.published_at DESC, ce.id DESC
             LIMIT %s
             """,
@@ -286,6 +292,7 @@ def financial_notes(
                 nd.id, nd.fiscal_year, nd.period_code, nd.scope, nd.version,
                 nd.document_name, nd.source_url, nd.source_sha256,
                 nd.page_count, nd.notes_count, nd.extraction_status,
+                nd.extractor_version, nd.extraction_quality,
                 nd.retrieved_at, ns.last_checked_at
             FROM note_documents nd
             JOIN note_sources ns ON ns.id = nd.note_source_id
@@ -320,7 +327,7 @@ def financial_notes(
                 fn.start_page, fn.end_page, fn.extraction_status,
                 LEFT(REGEXP_REPLACE(fn.content_text, E'[\\n\\r]+', ' ', 'g'), 320) AS excerpt
             FROM financial_notes fn
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY fn.note_number
             """,
             parameters,

@@ -12,6 +12,7 @@ from psycopg.errors import UniqueViolation
 from pwdlib import PasswordHash
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.activity import record_activity
 from app.config import get_settings, get_upload_dir
 from app.db import connection_scope
 
@@ -68,13 +69,12 @@ def hash_session_token(token: str) -> str:
 def serialize_user(user: dict) -> dict:
     return {
         "id": user["id"],
+        "is_admin": user.get("is_admin", False),
         "email": user["email"],
         "full_name": user["full_name"],
         "bio": user["bio"],
         "avatar_url": (
-            f"/uploads/avatars/{user['avatar_filename']}"
-            if user.get("avatar_filename")
-            else None
+            f"/uploads/avatars/{user['avatar_filename']}" if user.get("avatar_filename") else None
         ),
         "created_at": user["created_at"],
         "updated_at": user["updated_at"],
@@ -82,6 +82,11 @@ def serialize_user(user: dict) -> dict:
 
 
 def create_session(cursor, user_id: int) -> tuple[str, datetime]:
+    cursor.execute("SELECT is_active FROM app_users WHERE id=%s FOR UPDATE", (user_id,))
+    account = cursor.fetchone()
+    if not account or not account["is_active"]:
+        raise HTTPException(403, "Cuenta suspendida")
+    cursor.execute("UPDATE app_users SET last_login_at=NOW() WHERE id=%s", (user_id,))
     settings = get_settings()
     token = secrets.token_urlsafe(48)
     expires_at = datetime.now(UTC) + timedelta(days=settings.session_ttl_days)
@@ -110,6 +115,7 @@ def current_user(
             WHERE s.token_hash = %s
               AND s.revoked_at IS NULL
               AND s.expires_at > NOW()
+              AND u.is_active
             """,
             (hash_session_token(credentials.credentials),),
         )
@@ -134,6 +140,8 @@ def register(payload: RegisterRequest) -> dict:
             )
             user = cursor.fetchone()
             token, expires_at = create_session(cursor, user["id"])
+            record_activity(connection, user_id=user["id"], action="account.register")
+            record_activity(connection, user_id=user["id"], action="auth.login")
     except UniqueViolation as error:
         raise HTTPException(status_code=409, detail="Ese correo ya está registrado") from error
     return {"user": serialize_user(user), "session_token": token, "expires_at": expires_at}
@@ -150,6 +158,7 @@ def login(payload: LoginRequest) -> dict:
         if user is None or not password_hasher.verify(payload.password, user["password_hash"]):
             raise HTTPException(status_code=401, detail="Correo o contraseña incorrectos")
         token, expires_at = create_session(cursor, user["id"])
+        record_activity(connection, user_id=user["id"], action="auth.login")
     return {"user": serialize_user(user), "session_token": token, "expires_at": expires_at}
 
 
@@ -163,10 +172,13 @@ def logout(
         cursor.execute(
             """
             UPDATE auth_sessions SET revoked_at = NOW()
-            WHERE token_hash = %s AND revoked_at IS NULL
+            WHERE token_hash = %s AND revoked_at IS NULL RETURNING user_id
             """,
             (hash_session_token(credentials.credentials),),
         )
+        revoked = cursor.fetchone()
+        if revoked:
+            record_activity(connection, user_id=revoked["user_id"], action="auth.logout")
 
 
 current_user_dependency = Depends(current_user)
@@ -190,6 +202,7 @@ def update_profile(payload: ProfileUpdateRequest, user: dict = current_user_depe
             (payload.full_name, payload.bio.strip(), user["id"]),
         )
         updated_user = cursor.fetchone()
+        record_activity(connection, user_id=user["id"], action="profile.update")
     return {"user": serialize_user(updated_user)}
 
 
@@ -231,4 +244,5 @@ def upload_avatar(
             (filename, user["id"]),
         )
         updated_user = cursor.fetchone()
+        record_activity(connection, user_id=user["id"], action="profile.avatar")
     return {"user": serialize_user(updated_user)}

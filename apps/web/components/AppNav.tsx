@@ -11,9 +11,10 @@ const items = [
   { href: "/eventos", icon: "◷", label: "Eventos" },
 ];
 
-export function AppNav() {
+export function AppNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   return <nav aria-label="Navegación del panel">
     {items.map((item) => <Link className={pathname.startsWith(item.href) ? "active" : ""} href={item.href} key={item.href}><span>{item.icon}</span>{item.label}</Link>)}
+    {isAdmin && <Link className={pathname.startsWith("/admin") ? "active" : ""} href="/admin"><span>⚙</span>Administración</Link>}
   </nav>;
 }

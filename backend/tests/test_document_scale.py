@@ -50,11 +50,11 @@ def test_discovered_notes_do_not_require_verified_scales(monkeypatch, identity_o
         fetched.append(args[0])
         return b"%PDF-test"
     monkeypatch.setattr(module, "fetch_official", fetch)
-    monkeypatch.setattr(module, "read_pages", lambda *args: ["document"])
-    monkeypatch.setattr(module, "document_identity", lambda *args: identity_ok)
+    monkeypatch.setattr(module, "read_pages",
+                        lambda *args, **kwargs: ["document"] if identity_ok else [])
     monkeypatch.setattr("app.notes_scale.verify_notes_policy", lambda *args: {})
     monkeypatch.setattr(module, "verify_statement", lambda *args: None)
-    monkeypatch.setattr(module, "extract_notes_from_pdf",
+    monkeypatch.setattr(module, "extract_note_document_from_pages",
                         lambda *args: SimpleNamespace(notes=["note"]))
     monkeypatch.setattr("app.notes_jobs.register_note_sources",
                         lambda conn, sources: registered.extend(sources))
@@ -69,6 +69,35 @@ def test_discovered_notes_do_not_require_verified_scales(monkeypatch, identity_o
     assert bool(result["documents"]) == identity_ok
     if identity_ok:
         assert fetched == [url]  # Notes publish even while every scale is unknown.
+
+
+@pytest.mark.parametrize("matching", [True, False])
+def test_candidate_identity_is_checked_before_reading_body(monkeypatch, matching):
+    from types import SimpleNamespace
+
+    from app import document_scale as module
+
+    read = []
+    cover = "Empresa S.A. Estados financieros separados al 31 de diciembre de 2025"
+    texts = [cover, "Auditoría", "Opinión", "Notas", "Contenido"]
+
+    class Page:
+        def __init__(self, index):
+            self.index = index
+
+        def extract_text(self):
+            read.append(self.index)
+            return texts[self.index]
+
+    monkeypatch.setattr(module, "PdfReader", lambda _: SimpleNamespace(
+        is_encrypted=False, pages=[Page(i) for i in range(len(texts))],
+    ))
+    result = module.read_pages(
+        b"%PDF-test", name="Empresa S.A." if matching else "Otra S.A.",
+        year=2025, scope="individual",
+    )
+    assert read == ([0, 1, 2, 3, 4] if matching else [0, 1, 2])
+    assert result == (texts if matching else [])
 
 
 @pytest.mark.parametrize(

@@ -43,7 +43,7 @@ export function EventTimeline({ events, compact = false }: { events: CorporateEv
         </div>
         <div className="event-actions">
           <Link href={`/empresas/${event.smv_rpj}`}>{event.legal_name}</Link>
-          <a href={event.source_url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente oficial: ${event.source_document_name}`}>Fuente oficial ↗</a>
+          <a data-activity="source" href={event.source_url} target="_blank" rel="noreferrer" aria-label={`Abrir fuente oficial: ${event.source_document_name}`}>Fuente oficial ↗</a>
         </div>
       </div>
     </article>)}

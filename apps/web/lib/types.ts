@@ -1,5 +1,6 @@
 export type User = {
   id: number;
+  is_admin: boolean;
   email: string;
   full_name: string;
   bio: string;
@@ -203,6 +204,11 @@ export type NoteDocument = {
   source_sha256: string;
   page_count: number;
   notes_count: number;
+  extractor_version?: number;
+  extraction_quality?: {
+    expected_notes?: number | null; extracted_notes?: number;
+    coverage_checked_against_index?: boolean; warning?: string | null;
+  };
   extraction_status: "extracted" | "reviewed" | "warning";
   retrieved_at: string;
   last_checked_at: string | null;

@@ -128,3 +128,39 @@ def test_routes_require_authentication(database):
     assert (
         client.get("/companies/TEST/notes-report?year=2025&scope=consolidated").status_code == 200
     )
+
+
+def test_corrected_extractor_versions_same_pdf_and_deduplicates_concurrent_runs(database):
+    from app import notes
+
+    connection, _settings = database
+    # The same PDF was already stored with extractor v1. Its raw hash is unchanged.
+    pdf_bytes = b'%PDF-fixture-for-version-test'
+    import hashlib
+    digest = hashlib.sha256(pdf_bytes).hexdigest()
+    with connection() as conn:
+        conn.execute('UPDATE note_documents SET source_sha256=%s', (digest,))
+        source = conn.execute('SELECT * FROM note_sources').fetchone()
+    page = 'Notas a los estados financieros\n' + '\n'.join(
+        f'{i}. Nota contable\nContenido suficientemente extenso de la nota {i}.'
+        for i in range(1, 6)
+    )
+    extraction = notes.extract_note_document_from_pages([page], ())
+
+    def save():
+        with connection() as conn:
+            return notes.store_note_document(conn, source=source, pdf_bytes=pdf_bytes,
+                                             extraction=extraction)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        result = list(pool.map(lambda _: save(), range(2)))
+    assert sorted(row['status'] for row in result) == ['unchanged', 'versioned']
+    with connection() as conn:
+        documents = conn.execute('SELECT version,extractor_version,is_current,extraction_quality '
+                                 'FROM note_documents ORDER BY version').fetchall()
+        assert len(documents) == 2
+        assert documents[0]['extractor_version'] == 1 and not documents[0]['is_current']
+        assert documents[1]['extractor_version'] == notes.EXTRACTOR_VERSION
+        assert documents[1]['is_current']
+        assert documents[1]['extraction_quality']['extracted_notes'] == 5
+        assert conn.execute('SELECT COUNT(*) AS n FROM financial_notes').fetchone()['n'] == 6

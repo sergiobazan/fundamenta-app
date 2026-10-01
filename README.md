@@ -46,6 +46,10 @@ mensual de notas se ejecuta al primer despertar de la API durante el nuevo mes.
 
 ## Arquitectura
 
+Próxima funcionalidad acordada: [OCR selectivo para notas financieras](docs/OCR_SELECTIVO_NOTAS.md),
+con análisis de disposición, validación de cobertura y procesamiento reanudable.
+Estado: especificada; pendiente de implementación.
+
 - `apps/landing`: sitio público Astro (puerto `4321`).
 - `apps/web`: login, registro, panel y perfil en Next.js (puerto `3000`).
 - `backend`: API FastAPI, autenticación y datos financieros (puerto `8000`).
@@ -103,6 +107,14 @@ Abre:
 - Eventos oficiales autenticados: `http://localhost:3000/eventos`
 - Búsqueda documental autenticada: `http://localhost:3000/buscar`
 - API: `http://localhost:8000/docs`
+
+## Administración de análisis y usuarios
+
+El panel `/admin` incluye usuarios, actividad y control auditado de acceso. Detalles y
+activación en [Usuarios y actividad](docs/PANEL_ADMIN_USUARIOS_ACTIVIDAD.md).
+
+El panel interno `/admin` permite inspeccionar y reintentar análisis fallidos con
+permisos y auditoría. Consulta [habilitación y operación](docs/PANEL_ADMIN_ANALISIS.md).
 
 ## Configuración de la landing
 
@@ -270,7 +282,7 @@ Configuración del **backend** (archivo `.env` local o variables del servicio en
 ```dotenv
 NVIDIA_API_KEY=
 NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
-NVIDIA_MODEL=deepseek-ai/deepseek-v4-pro-0813
+NVIDIA_MODEL=moonshotai/kimi-k3
 ```
 
 Completa únicamente la clave y reinicia el backend. Nunca la pongas en Vercel,

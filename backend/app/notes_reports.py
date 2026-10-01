@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.activity import record_activity
 from app.auth import current_user_dependency
 from app.config import Settings, get_settings
 from app.db import connect
@@ -313,6 +314,18 @@ def request_report(smv_rpj: str, payload: ReportRequest, user: dict = current_us
             )
             existing = cursor.fetchone()
             if existing and existing["status"] != "failed":
+                record_activity(
+                    connection,
+                    user_id=user["id"],
+                    action="report.request",
+                    outcome="reused",
+                    resource_type="report",
+                    resource_id=existing["id"],
+                    company_rpj=smv_rpj,
+                    fiscal_year=payload.year,
+                    scope=payload.scope,
+                )
+                connection.commit()
                 return {"report": public_report(existing)}
             cursor.execute(
                 """SELECT COUNT(*) AS count FROM notes_reports WHERE requested_by=%s
@@ -340,6 +353,17 @@ def request_report(smv_rpj: str, payload: ReportRequest, user: dict = current_us
                     (*key, user["id"], Jsonb(source)),
                 )
             row = cursor.fetchone()
+        record_activity(
+            connection,
+            user_id=user["id"],
+            action="report.request",
+            outcome="retried" if existing else "created",
+            resource_type="report",
+            resource_id=row["id"],
+            company_rpj=smv_rpj,
+            fiscal_year=payload.year,
+            scope=payload.scope,
+        )
         connection.commit()
     return {"report": public_report(row)}
 
@@ -428,7 +452,7 @@ async def call_nvidia(source: dict, settings: Settings, model: str) -> str:
                 "stream": False,
                 "max_tokens": min(settings.notes_report_max_output_tokens, 8192),
                 **(
-                    {"temperature": 1, "seed": 0, "reasoning_effort": "max"}
+                    {"temperature": 1, "seed": 0, "reasoning_effort": "low"}
                     if model == "moonshotai/kimi-k3"
                     else {}
                 ),
@@ -468,6 +492,12 @@ def safe_error(error: Exception) -> tuple[str, bool]:
         code = error.response.status_code
         if code in (401, 403):
             return "NVIDIA rechazó la credencial o el acceso al modelo; revisa el backend.", False
+        if code == 410:
+            return (
+                "El modelo configurado ya no está disponible en NVIDIA. "
+                "Actualiza NVIDIA_MODEL en el backend y genera un nuevo informe.",
+                False,
+            )
         if code == 429 or code >= 500:
             return "NVIDIA no está disponible temporalmente o alcanzó su cuota.", True
         return "NVIDIA rechazó la solicitud; revisa modelo y límites configurados.", False

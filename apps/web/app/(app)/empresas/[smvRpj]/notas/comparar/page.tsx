@@ -68,8 +68,8 @@ export default async function NoteComparisonPage({
     </section>
 
     <section className="comparison-documents">
-      <a href={data.current_source_url} target="_blank" rel="noreferrer"><span>{data.current_year} · versión {data.current_document_version}</span><b>{data.current_document_name}</b><small>Abrir PDF oficial ↗</small></a>
-      <a href={data.previous_source_url} target="_blank" rel="noreferrer"><span>{data.previous_year} · versión {data.previous_document_version}</span><b>{data.previous_document_name}</b><small>Abrir PDF oficial ↗</small></a>
+      <a data-activity="source" href={data.current_source_url} target="_blank" rel="noreferrer"><span>{data.current_year} · versión {data.current_document_version}</span><b>{data.current_document_name}</b><small>Abrir PDF oficial ↗</small></a>
+      <a data-activity="source" href={data.previous_source_url} target="_blank" rel="noreferrer"><span>{data.previous_year} · versión {data.previous_document_version}</span><b>{data.previous_document_name}</b><small>Abrir PDF oficial ↗</small></a>
     </section>
 
     <form className="note-comparison-filters" action={`/empresas/${smvRpj}/notas/comparar`} method="get">
@@ -120,7 +120,7 @@ function EvidenceColumn({ note, year, smvRpj, scope, emptyText }: { note: Narrat
   return <section className="comparison-period">
     <div><b>{year}</b><Link href={`/empresas/${smvRpj}/notas/${note.note_number}?year=${year}&period=A&scope=${scope}`}>Nota {note.note_number} · leer completa →</Link></div>
     <h3>{note.title}</h3>
-    {facts.length ? <ol>{facts.map((fact) => <li key={fact.item_order}><p>{fact.text}</p><a href={`${fact.citation.source_url}#page=${fact.citation.page_number}`} target="_blank" rel="noreferrer">Pág. {fact.citation.page_number} del PDF oficial ↗</a></li>)}</ol> : <p className="comparison-no-evidence">El extractor se abstuvo: no encontró narrativa suficientemente legible para citar.</p>}
+    {facts.length ? <ol>{facts.map((fact) => <li key={fact.item_order}><p>{fact.text}</p><a data-activity="source" href={`${fact.citation.source_url}#page=${fact.citation.page_number}`} target="_blank" rel="noreferrer">Pág. {fact.citation.page_number} del PDF oficial ↗</a></li>)}</ol> : <p className="comparison-no-evidence">El extractor se abstuvo: no encontró narrativa suficientemente legible para citar.</p>}
   </section>;
 }
 

@@ -39,6 +39,6 @@ export default async function StatementPage({
     <AnnualComparisonBanner title={`${filing.legal_name} · ${statementNames[filing.statement_type]}`} year={filing.fiscal_year} scope={filing.scope} href={`/empresas/${smvRpj}/estados/${statementType}/comparar?year=${year}&scope=${scope}`} sourceUrl={filing.scale_source_url} />
     <section className="statement-content"><StatementTable facts={statement.facts} year={filing.fiscal_year} unverifiedScale={filing.reported_scale === "unknown"} /></section>
     <section className="validation-section"><div><span className="overline">CONTROLES AUTOMÁTICOS</span><h2>Resultado de validaciones</h2></div><div>{statement.validations.map((validation) => <article key={validation.rule_code}><i className={validation.status}></i><div><b>{validation.rule_code.replaceAll("_", " ")}</b><span>{validation.status === "passed" ? "Aprobado" : validation.status === "failed" ? "Falló" : "No aplicable"}</span></div></article>)}</div></section>
-    <footer className="data-footer"><span>Se muestran sólo conceptos normalizados; no se estiman cuentas faltantes.</span>{filing.scale_source_url && <a href={filing.scale_source_url} target="_blank" rel="noreferrer">Documento que confirma la escala ↗</a>}</footer>
+    <footer className="data-footer"><span>Se muestran sólo conceptos normalizados; no se estiman cuentas faltantes.</span>{filing.scale_source_url && <a data-activity="source" href={filing.scale_source_url} target="_blank" rel="noreferrer">Documento que confirma la escala ↗</a>}</footer>
   </>;
 }

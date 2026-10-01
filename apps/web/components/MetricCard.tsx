@@ -127,6 +127,6 @@ export function MetricCard({
       <summary>Ver cálculo e insumos <span aria-hidden="true">+</span></summary>
       <MetricExplanation metric={metric} />
     </details>
-    {sourceUrl && <a className="metric-source" href={sourceUrl} target="_blank" rel="noreferrer">↗ {sourceLabel || "Documento financiero oficial"}</a>}
+    {sourceUrl && <a data-activity="source" className="metric-source" href={sourceUrl} target="_blank" rel="noreferrer">↗ {sourceLabel || "Documento financiero oficial"}</a>}
   </article>;
 }

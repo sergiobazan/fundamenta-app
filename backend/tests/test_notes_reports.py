@@ -224,8 +224,10 @@ def test_nvidia_request_uses_configured_model_and_ignores_reasoning(monkeypatch,
 
     def handle(request):
         body = json.loads(request.content)
-        assert body["model"] == "deepseek-ai/deepseek-v4-pro-0813"
-        assert "reasoning_effort" not in body
+        assert body["model"] == "moonshotai/kimi-k3"
+        assert body["reasoning_effort"] == "low"
+        assert body["temperature"] == 1
+        assert body["seed"] == 0
         assert body["stream"] is False
         assert request.headers["Authorization"] == "Bearer test-only"
         return httpx.Response(
@@ -278,3 +280,14 @@ def test_truncated_model_response_rejected(monkeypatch, source):
     settings = Settings(_env_file=None, nvidia_api_key="test-only")
     with pytest.raises(ValueError, match="incompleta"):
         asyncio.run(reports.generate(source, settings, settings.nvidia_model))
+
+
+def test_retired_model_has_actionable_error_without_provider_body():
+    response = httpx.Response(410, text='PRIVATE_PROVIDER_DETAIL',
+                              request=httpx.Request('POST', 'https://integrate.api.nvidia.com'))
+    error = httpx.HTTPStatusError('Gone', request=response.request, response=response)
+    message, retryable = reports.safe_error(error)
+    assert 'NVIDIA_MODEL' in message
+    assert 'ya no está disponible' in message
+    assert 'PRIVATE_PROVIDER_DETAIL' not in message
+    assert retryable is False

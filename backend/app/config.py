@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     analysis_active_jobs_per_user: int = 3
     nvidia_api_key: SecretStr = SecretStr("")
     nvidia_base_url: str = "https://integrate.api.nvidia.com/v1"
-    nvidia_model: str = "deepseek-ai/deepseek-v4-pro-0813"
+    nvidia_model: str = "moonshotai/kimi-k3"
     notes_report_worker_enabled: bool = True
     notes_report_timeout_seconds: float = Field(default=300, gt=0, le=600)
     notes_report_max_input_chars: int = Field(default=500_000, ge=1000, le=1_000_000)

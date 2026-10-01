@@ -103,7 +103,7 @@ export default function NotesReport({ smvRpj, year, scope }: {
     {result && <>
       <section className="ai-report-coverage"><h2>Fuentes y alcance</h2>
         <p>{result.coverage.fragments} fragmentos incluidos · {result.comparison_available ? `Documentos de ${year} y ${year - 1}` : "Sin comparación interanual disponible"}</p>
-        {result.coverage.documents.map(doc => <a key={doc.id} href={doc.source_url} target="_blank" rel="noreferrer">{doc.document_name} · versión {doc.version} ↗</a>)}
+        {result.coverage.documents.map(doc => <a data-activity="source" key={doc.id} href={doc.source_url} target="_blank" rel="noreferrer">{doc.document_name} · versión {doc.version} ↗</a>)}
       </section>
       <div className="ai-report-filters" aria-label="Filtrar hallazgos">
         {[["all", "Todos"], ["risk", "Riesgos y alertas"], ["change", "Cambios interanuales"], ["context", "Contexto"]].map(([value, label]) =>
@@ -117,7 +117,7 @@ export default function NotesReport({ smvRpj, year, scope }: {
         <h3>Interpretación de IA · por verificar</h3><p>{finding.interpretation}</p>
         <details><summary>Ver evidencia ({finding.citations.length})</summary>{finding.citations.map((citation, i) =>
           <figure key={`${citation.fragment_id}-${i}`}><blockquote>{citation.quote}</blockquote><figcaption>
-            <a href={`${citation.source_url.split("#")[0]}#page=${citation.page}`} target="_blank" rel="noreferrer">{citation.year} · Nota {citation.note} · Página {citation.page} ↗</a>
+            <a data-activity="source" href={`${citation.source_url.split("#")[0]}#page=${citation.page}`} target="_blank" rel="noreferrer">{citation.year} · Nota {citation.note} · Página {citation.page} ↗</a>
           </figcaption></figure>)}</details>
         <div className="ai-finding-question"><h3>Pregunta para profundizar</h3><p>{finding.question}</p></div>
       </article>)}</div>

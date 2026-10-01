@@ -113,7 +113,7 @@ export default async function ComparatorPage({
       </table>
     </section>}
 
-    <section className="comparison-sources"><div><span className="overline">FUENTES PRIMARIAS</span><p>Cada columna conserva su propia referencia. Fundamenta no mezcla documentos ni rellena cuentas ausentes.</p></div><div>{leftFiling?.scale_source_url&&<a href={leftFiling.scale_source_url} target="_blank" rel="noreferrer">{left.summary.company.legal_name} ↗</a>}{rightFiling?.scale_source_url&&<a href={rightFiling.scale_source_url} target="_blank" rel="noreferrer">{right.summary.company.legal_name} ↗</a>}</div></section>
+    <section className="comparison-sources"><div><span className="overline">FUENTES PRIMARIAS</span><p>Cada columna conserva su propia referencia. Fundamenta no mezcla documentos ni rellena cuentas ausentes.</p></div><div>{leftFiling?.scale_source_url&&<a data-activity="source" data-company={left.summary.company.smv_rpj} href={leftFiling.scale_source_url} target="_blank" rel="noreferrer">{left.summary.company.legal_name} ↗</a>}{rightFiling?.scale_source_url&&<a data-activity="source" data-company={right.summary.company.smv_rpj} href={rightFiling.scale_source_url} target="_blank" rel="noreferrer">{right.summary.company.legal_name} ↗</a>}</div></section>
     <footer className="data-footer"><span>Una cifra mayor no implica automáticamente una inversión mejor.</span><Link href="/empresas">Auditar estados y fórmulas ↗</Link></footer>
   </>;
 }

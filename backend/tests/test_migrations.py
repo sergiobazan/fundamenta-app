@@ -4,14 +4,14 @@ import pytest
 from app.migrations import discover_migrations
 
 
-def test_discovers_the_eighteen_ordered_project_migrations() -> None:
+def test_discovers_the_twenty_two_ordered_project_migrations() -> None:
     directory = Path(__file__).resolve().parents[2] / "infra" / "postgres" / "init"
 
     migrations = discover_migrations(directory)
 
-    assert [migration.version for migration in migrations] == list(range(1, 19))
+    assert [migration.version for migration in migrations] == list(range(1, 23))
     assert migrations[0].name == "001_initial_schema.sql"
-    assert migrations[-1].name == "018_notes_reports.sql"
+    assert migrations[-1].name == "022_activity_feed_audit_reads.sql"
     assert all(len(migration.checksum) == 64 for migration in migrations)
 
 

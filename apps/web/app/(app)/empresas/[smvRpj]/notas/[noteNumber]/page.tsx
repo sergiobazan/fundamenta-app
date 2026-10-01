@@ -44,7 +44,7 @@ export default async function NoteDetailPage({
 
     <header className="note-detail-header">
       <div><span className="overline">NOTA {note.note_number} · {noteTopicNames[note.topic]}</span><h1>{note.original_title}</h1><p>{note.legal_name} · {note.fiscal_year} · {note.scope === "consolidated" ? "Consolidado" : "Individual"}</p></div>
-      <a className="document-button" href={`${note.source_url}#page=${note.start_page}`} target="_blank" rel="noreferrer">Ver en PDF · pág. {note.start_page} ↗</a>
+      <a data-activity="source" className="document-button" href={`${note.source_url}#page=${note.start_page}`} target="_blank" rel="noreferrer">Ver en PDF · pág. {note.start_page} ↗</a>
     </header>
 
     <section className="note-integrity">
@@ -57,7 +57,7 @@ export default async function NoteDetailPage({
     <div className="note-reading-layout">
       <article className="note-reading">
         {sections.map((section) => <section key={`${section.page_number}-${section.section_order}`}>
-          <div className="page-reference"><span>Página {section.page_number}</span><a href={`${note.source_url}#page=${section.page_number}`} target="_blank" rel="noreferrer">Contrastar en fuente ↗</a></div>
+          <div className="page-reference"><span>Página {section.page_number}</span><a data-activity="source" href={`${note.source_url}#page=${section.page_number}`} target="_blank" rel="noreferrer">Contrastar en fuente ↗</a></div>
           <div className="extracted-copy">{section.content_text}</div>
         </section>)}
       </article>
@@ -75,7 +75,7 @@ export default async function NoteDetailPage({
           <div className="summary-section-title"><span>01</span><div><h3>Hechos observados</h3><p>Texto del documento, sin completar información faltante.</p></div></div>
           {summary.observed_facts.length ? <ol>{summary.observed_facts.map((fact) => <li key={fact.item_order}>
             <p>{fact.text}</p>
-            <a href={`${fact.citation.source_url}#page=${fact.citation.page_number}`} target="_blank" rel="noreferrer">Fuente: {fact.citation.document_name} · pág. {fact.citation.page_number} ↗</a>
+            <a data-activity="source" href={`${fact.citation.source_url}#page=${fact.citation.page_number}`} target="_blank" rel="noreferrer">Fuente: {fact.citation.document_name} · pág. {fact.citation.page_number} ↗</a>
           </li>)}</ol> : <p className="summary-unavailable">No hay evidencia narrativa suficiente para producir un resumen seguro.</p>}
         </section>
 

@@ -639,6 +639,16 @@ Antes de crear herramientas administrativas generales, el MVP necesita una vista
 - Resolver descubrimientos de fuentes que requieren intervención.
 - Ver respuestas de IA reportadas.
 - Republicar una empresa después de una corrección.
+- Consultar usuarios registrados, fecha de alta, estado, rol y actividad registrada.
+- Abrir el historial de un usuario con sus solicitudes de análisis, informes de notas,
+  accesos y consultas instrumentadas, diferenciando acciones humanas de tareas automáticas.
+- Suspender o reactivar cuentas, revocar sesiones y gestionar permisos con motivo y
+  auditoría, sin permitir retirar o suspender al último administrador activo.
+
+La ampliación del panel existente para usuarios y actividad está especificada en
+[Administración de usuarios y actividad](docs/PANEL_ADMIN_USUARIOS_ACTIVIDAD.md).
+Estado: implementada en código y migrada en local. La cobertura histórica se limita
+a registros existentes; el uso detallado comienza con la instrumentación nueva.
 
 La revisión manual es parte del MVP; no debe ocultarse como trabajo excepcional.
 
@@ -665,6 +675,11 @@ Eventos mínimos:
 - Intención de pago.
 
 No registrar el texto completo de preguntas sensibles sin consentimiento y política de privacidad adecuada.
+
+Los eventos atribuibles a cuentas podrán consultarse en el panel administrativo con
+filtros y paginación. La ausencia de eventos anteriores a la instrumentación no implica
+que el usuario no haya utilizado la aplicación. El contrato de registro y sus límites
+se definen en la especificación de usuarios y actividad de la sección 16.
 
 ---
 
@@ -709,6 +724,23 @@ El MVP estará terminado cuando:
 
 ## 19. Plan de desarrollo
 
+### Próxima funcionalidad: OCR selectivo para notas financieras
+
+**Prioridad inmediata acordada el 14 de septiembre de 2026. Estado: especificada,
+pendiente de implementación.** Este bloque precede a las ampliaciones pendientes del
+orden de ejecución siguiente, sin dar por terminados sus entregables anteriores.
+
+Incorporar OCR por página como respaldo de la extracción de texto, junto con análisis
+de disposición y validación de cobertura. Se activará ante texto ausente o ilegible,
+o discrepancias estructurales que puedan deberse a la lectura. Conservará la evidencia
+original, se ejecutará como etapa persistente y reanudable, y enviará a revisión los
+casos que sigan siendo ambiguos. El panel administrador mostrará el motivo de
+activación, páginas procesadas, resultados y reintentos.
+
+Alcance, límites y criterios de aceptación:
+[OCR selectivo y validación documental](docs/OCR_SELECTIVO_NOTAS.md).
+La reconstrucción contable completa de tablas continúa fuera de esta entrega.
+
 ### Orden vigente de ejecución
 
 El desarrollo posterior a la Fase 12 se realizará en lotes verificables y en este
@@ -731,7 +763,7 @@ de exactitud o trazabilidad:
 6. **Completar eventos y alertas.** Ampliar fuentes oficiales, actualización y avisos.
 7. **Informe de notas con abstención y trazabilidad usando NVIDIA, antes del chat.**
    Bajo demanda, para cualquier empresa con notas oficiales extraídas. Modelo inicial:
-   `deepseek-ai/deepseek-v4-pro-0813`, endpoint `https://integrate.api.nvidia.com/v1`.
+   `moonshotai/kimi-k3`, endpoint `https://integrate.api.nvidia.com/v1`.
    Prioriza riesgos y alertas; compara ejercicios sólo con evidencia de ambos años y
    del mismo alcance. Separa hechos, interpretación de IA y preguntas de investigación.
    Cada hallazgo incluye citas literales cotejadas, nota, página y enlace oficial.
@@ -963,6 +995,11 @@ sus preguntas de compatibilidad con evidencia.
 ---
 
 ## 25. Próximos pasos inmediatos
+
+**Siguiente entrega priorizada:** implementar
+[OCR selectivo para notas financieras](docs/OCR_SELECTIVO_NOTAS.md), empezando por
+el corpus revisado y la evaluación del motor. La lista siguiente conserva el plan
+base y no constituye una declaración de pendientes o de implementación del OCR.
 
 1. Sincronizar un catálogo SMV separado de las empresas que ya tienen análisis.
 2. Generalizar empresa, periodo y alcance para admitir estados individuales sin
